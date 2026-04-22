@@ -1915,7 +1915,12 @@ function renderChat(){
     +'<input type="file" accept=".txt,.md,.csv,.json,.html" style="display:none" onchange="uploadDocument(this.files[0])">'
     +'</label></div>'
     +(docList2.length===0
-      ?'<p style="font-size:12px;color:var(--text3);margin:0;text-align:center">MOU, SPA 초안 등을 업로드하면 AI가 내용을 참조해 답변해요.</p>'
+      ?'<div style="font-size:12px;color:var(--text3);line-height:1.8;padding:4px 0">'
+      +'<p style="margin:0 0 6px 0">MOU, SPA 초안 등 <b>텍스트 파일</b>을 업로드하면 AI가 내용을 직접 읽고 답변해요.</p>'
+      +'<p style="margin:0 0 4px 0;color:var(--urgent);font-weight:600">⚠ PDF 업로드는 지원되지 않아요</p>'
+      +'<p style="margin:0 0 6px 0;color:var(--text2)">이 대시보드는 <b>Claude AI 챗봇</b> 기반으로 작동하는데, 브라우저 보안 정책상 PDF 바이너리 파일을 직접 읽을 수 없어요. MOU, SPA 초안 등은 <b>.txt 또는 .md</b> 형식으로 변환해서 올려주세요.</p>'
+      +'<p style="margin:0;color:var(--text3)">지원 형식: .txt .md .html .csv .json &nbsp;|&nbsp; 최대 크기: 5MB</p>'
+      +'</div>'
       :'<div style="display:flex;flex-wrap:wrap;gap:8px">'
         +docList2.map(function(d){
           var dname=d.name;var did=d.id;
@@ -1944,7 +1949,12 @@ function renderChat(){
     +'<input type="file" accept=".txt,.md,.csv,.json,.html" style="display:none" onchange="uploadDocument(this.files[0])">'
     +'</label></div>'
     +(docList2.length===0
-      ?'<p style="font-size:12px;color:var(--text3);margin:0;text-align:center">MOU, SPA 초안 등을 업로드하면 AI가 내용을 참조해 답변해요.</p>'
+      ?'<div style="font-size:12px;color:var(--text3);line-height:1.8;padding:4px 0">'
+      +'<p style="margin:0 0 6px 0">MOU, SPA 초안 등 <b>텍스트 파일</b>을 업로드하면 AI가 내용을 직접 읽고 답변해요.</p>'
+      +'<p style="margin:0 0 4px 0;color:var(--urgent);font-weight:600">⚠ PDF 업로드는 지원되지 않아요</p>'
+      +'<p style="margin:0 0 6px 0;color:var(--text2)">이 대시보드는 <b>Claude AI 챗봇</b> 기반으로 작동하는데, 브라우저 보안 정책상 PDF 바이너리 파일을 직접 읽을 수 없어요. MOU, SPA 초안 등은 <b>.txt 또는 .md</b> 형식으로 변환해서 올려주세요.</p>'
+      +'<p style="margin:0;color:var(--text3)">지원 형식: .txt .md .html .csv .json &nbsp;|&nbsp; 최대 크기: 5MB</p>'
+      +'</div>'
       :'<div style="display:flex;flex-wrap:wrap;gap:8px">'
         +docList2.map(function(d){
           var dname=d.name;var did=d.id;
