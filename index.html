@@ -2512,6 +2512,15 @@ async function callAI(messages, systemPrompt, maxTokens){
   var docsCtx = getDocumentsContext();
   var sysContent = (systemPrompt||'') + (docsCtx||'');
   var cleanMsgs = messages.filter(function(m){ return m.role !== 'system'; });
+
+  // API Key 가져오기
+  var rawKey = getApiKey();
+  var key = rawKey ? rawKey.replace(/[^\x20-\x7E]/g,'').trim() : '';
+
+  if(!key){
+    throw new Error('Claude API Key가 설정되지 않았어요.\n사이드바 하단 "Claude API Key 설정" 클릭 후\nsk-ant-... 키를 입력해주세요.\n\n발급: console.anthropic.com → API Keys');
+  }
+
   var payload = {
     model: 'claude-sonnet-4-20250514',
     max_tokens: maxTokens || 1500,
@@ -2519,57 +2528,28 @@ async function callAI(messages, systemPrompt, maxTokens){
   };
   if(sysContent) payload.system = sysContent;
 
-  try {
-    var res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify(payload)
-    });
-    if(res.ok){
-      var data = await res.json();
-      return (data.content && data.content[0] && data.content[0].text) || '';
-    }
-  } catch(e) {}
-
-  // fallback: OpenAI
-  var rawKey = getApiKey();
-  if(!rawKey || !rawKey.trim()) {
-    throw new Error('AI 응답 실패.\n\n해결 방법:\n1. console.anthropic.com 에서 Claude API Key 발급\n2. 사이드바 "Claude API Key 설정" 클릭 후 sk-ant-... 키 입력\n\n또는 OpenAI API Key도 사용 가능합니다.');
-  }
-  var key = rawKey.replace(/[^\x20-\x7E]/g,'').trim();
-  var oaiMsgs = sysContent ? [{role:'system',content:sysContent}].concat(cleanMsgs) : cleanMsgs;
-  var oaiPayload = {model:'gpt-4o', messages:oaiMsgs, max_tokens:maxTokens||1500};
-
-  return new Promise(function(resolve, reject){
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST','https://api.openai.com/v1/chat/completions',true);
-    try {
-      xhr.setRequestHeader('Authorization','Bearer '+key);
-      xhr.setRequestHeader('Content-Type','application/json');
-    } catch(e) {
-      reject(new Error('API Key 오류: 사이드바에서 키를 다시 입력해주세요.')); return;
-    }
-    xhr.timeout = 30000;
-    xhr.onreadystatechange = function(){
-      if(xhr.readyState!==4) return;
-      if(xhr.status>=200&&xhr.status<300){
-        try { var d=JSON.parse(xhr.responseText); resolve((d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content)||''); }
-        catch(e){ reject(new Error('파싱 오류')); }
-      } else if(xhr.status===401){
-        reject(new Error('API Key가 올바르지 않아요 (401). 사이드바에서 다시 입력해주세요.'));
-      } else if(xhr.status===0){
-        reject(new Error('CORS 오류: GitHub Pages에서는 OpenAI 직접 호출이 차단돼요.\nClaude API Key를 사용해주세요: console.anthropic.com'));
-      } else {
-        reject(new Error('오류 '+xhr.status+': '+xhr.responseText.slice(0,200)));
-      }
-    };
-    xhr.onerror = function(){ reject(new Error('네트워크 오류')); };
-    xhr.send(JSON.stringify(oaiPayload));
+  var res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify(payload)
   });
+
+  if(!res.ok){
+    var errData = await res.json().catch(function(){return {};});
+    var errMsg = (errData.error && errData.error.message) || JSON.stringify(errData);
+    if(res.status === 401){
+      throw new Error('API Key가 올바르지 않아요 (401).\n사이드바에서 키를 다시 입력해주세요.\nsk-ant-api03-... 형태여야 해요.');
+    }
+    throw new Error('Claude API 오류 ' + res.status + ': ' + errMsg);
+  }
+
+  var data = await res.json();
+  return (data.content && data.content[0] && data.content[0].text) || '';
 }
 
 async function callAIOpenAI(messages, sysContent, maxTokens){
