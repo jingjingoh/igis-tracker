@@ -2509,20 +2509,68 @@ function getApiKey(){return _cachedApiKey||localStorage.getItem('igis_openai_key
 
 // OpenAI API 호출 헬퍼
 async function callAI(messages, systemPrompt, maxTokens){
+  // API key 확인
   var rawKey=getApiKey();
-  if(!rawKey) throw new Error('API Key가 없어요. 사이드바에서 OpenAI API Key를 설정해주세요.');
-  // key에서 비 ASCII 문자 완전 제거 (개행, 공백, 특수문자 등)
+  if(!rawKey || rawKey.trim()===''){
+    throw new Error('OpenAI API Key가 설정되지 않았어요.\n사이드바 하단 "OpenAI API Key 설정"을 클릭해서 sk-... 키를 입력해주세요.');
+  }
+  // ASCII 범위 밖 문자 완전 제거
   var key=rawKey.replace(/[^\x20-\x7E]/g,'').trim();
-  if(!key) throw new Error('API Key가 유효하지 않아요. 다시 설정해주세요.');
+  if(!key || key.length < 20){
+    throw new Error('API Key가 올바르지 않아요. sk-로 시작하는 키를 다시 입력해주세요.\n사이드바 하단 "OpenAI API Key 설정" 클릭');
+  }
 
-  // systemPrompt에서 비 ASCII 특수문자 제거
-  var safePrompt=(systemPrompt||'').replace(/[\u2500-\u257F]/g,'=').replace(/[\u3010\u3011]/g,'');
-  var docsCtx=getDocumentsContext();
-  var sysContent=safePrompt+(docsCtx||'');
-  var msgs=sysContent?[{role:'system',content:sysContent},...messages]:messages;
-  var payload={model:'gpt-4o',messages:msgs,max_tokens:maxTokens||1500};
+  // 서류 + systemPrompt 합치기
+  var docsCtx = getDocumentsContext();
+  var sysContent = (systemPrompt||'') + (docsCtx||'');
+  var cleanMsgs = messages.filter(function(m){ return m.role !== 'system'; });
+  var allMsgs = sysContent ? [{role:'system', content:sysContent}].concat(cleanMsgs) : cleanMsgs;
+
+  var payload = {model:'gpt-4o', messages:allMsgs, max_tokens: maxTokens||1500};
 
   return new Promise(function(resolve, reject){
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', 'https://api.openai.com/v1/chat/completions', true);
+    try {
+      xhr.setRequestHeader('Authorization', 'Bearer ' + key);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+    } catch(e) {
+      reject(new Error('헤더 설정 오류: API Key에 특수문자가 있어요. 키를 다시 입력해주세요.'));
+      return;
+    }
+    xhr.onreadystatechange = function(){
+      if(xhr.readyState !== 4) return;
+      if(xhr.status >= 200 && xhr.status < 300){
+        try {
+          var data = JSON.parse(xhr.responseText);
+          var reply = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+          resolve(reply || '(응답 없음)');
+        } catch(e) { reject(new Error('응답 파싱 오류: ' + e.message)); }
+      } else if(xhr.status === 401) {
+        reject(new Error('API Key가 올바르지 않아요 (401).\n사이드바에서 키를 다시 입력해주세요.'));
+      } else if(xhr.status === 429) {
+        reject(new Error('API 호출 한도 초과 (429). 잠시 후 다시 시도해주세요.'));
+      } else if(xhr.status === 0) {
+        reject(new Error('네트워크 오류 (0). 인터넷 연결을 확인하거나 잠시 후 다시 시도해주세요.'));
+      } else {
+        reject(new Error('API 오류 ' + xhr.status + ': ' + xhr.responseText.slice(0, 200)));
+      }
+    };
+    xhr.onerror = function(){ reject(new Error('네트워크 연결 오류. 인터넷을 확인해주세요.')); };
+    xhr.ontimeout = function(){ reject(new Error('요청 시간 초과. 다시 시도해주세요.')); };
+    xhr.timeout = 30000;
+    xhr.send(JSON.stringify(payload));
+  });
+}
+
+async function callAIOpenAI(messages, sysContent, maxTokens){
+  var rawKey=getApiKey();
+  if(!rawKey) throw new Error('API Key가 없어요. 사이드바에서 OpenAI API Key를 설정해주세요.');
+  var key=rawKey.replace(/[^\x20-\x7E]/g,'').trim();
+  if(!key) throw new Error('API Key가 유효하지 않아요.');
+  var msgs=sysContent?[{role:'system',content:sysContent},...messages.filter(function(m){return m.role!=='system';})]:messages;
+  var payload={model:'gpt-4o',messages:msgs,max_tokens:maxTokens||1500};
+  return new Promise(function(resolve,reject){
     var xhr=new XMLHttpRequest();
     xhr.open('POST','https://api.openai.com/v1/chat/completions',true);
     xhr.setRequestHeader('Authorization','Bearer '+key);
@@ -2530,15 +2578,11 @@ async function callAI(messages, systemPrompt, maxTokens){
     xhr.onreadystatechange=function(){
       if(xhr.readyState!==4) return;
       if(xhr.status>=200&&xhr.status<300){
-        try{
-          var data=JSON.parse(xhr.responseText);
-          resolve((data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||'');
-        }catch(e){reject(new Error('응답 파싱 오류: '+e.message));}
-      }else{
-        reject(new Error('API 오류 '+xhr.status+': '+xhr.responseText.slice(0,300)));
-      }
+        try{var d=JSON.parse(xhr.responseText);resolve((d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content)||'');}
+        catch(e){reject(new Error('파싱 오류'));}
+      }else{reject(new Error('OpenAI 오류 '+xhr.status));}
     };
-    xhr.onerror=function(){reject(new Error('네트워크 오류. 인터넷 연결을 확인해주세요.'));};
+    xhr.onerror=function(){reject(new Error('네트워크 오류'));};
     xhr.send(JSON.stringify(payload));
   });
 }
@@ -2567,6 +2611,7 @@ function loadApiKeyFromFirebase(){
     if(snap.val()){
       _cachedApiKey=snap.val();
       localStorage.setItem('igis_openai_key',snap.val());
+      console.log('[IGIS] API Key Firebase에서 로드 완료');
     }
   });
 }
