@@ -313,7 +313,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 <!-- API KEY MODAL -->
 <div class="modal-bg" id="apikey-modal">
   <div class="modal" style="width:420px">
-    <div class="modal-title">OpenAI API Key 설정</div>
+    <div class="modal-title">Claude API Key 설정</div>
     <div style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.6">
       한 번 저장하면 <strong style="color:var(--ic)">팀원 전체가 공유</strong>해요. Firebase에 저장됩니다.<br>
       <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--ic)">platform.openai.com/api-keys</a>에서 발급받으세요. (sk-...)
@@ -388,7 +388,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
       </div>
       <div class="sidebar-section">설정</div>
       <div class="nav-item" onclick="openApiKeyModal()" style="color:var(--text3);font-size:11px">
-        <div class="nav-dot" style="background:var(--text3)"></div>OpenAI API Key 설정
+        <div class="nav-dot" style="background:var(--text3)"></div>Claude API Key 설정
       </div>
       <div class="nav-item" onclick="forceUploadWiki()" style="color:var(--ic);font-size:11px">
         <div class="nav-dot" style="background:var(--ic)"></div>Wiki 데이터 업로드
@@ -1860,7 +1860,7 @@ function saveWikiNotes(catName,sectionId,val){
 
 async function aiSummarizeWiki(catName,sectionId){
   const key=getApiKey();
-  if(!key){alert('OpenAI API Key를 먼저 설정해주세요');openApiKeyModal();return;}
+  if(!key){alert('Claude API Key를 먼저 설정해주세요');openApiKeyModal();return;}
   const sec=Object.values((WIKI_DATA[catName]||{}).sections||{}).find(s=>s.id===sectionId);
   if(!sec) return;
   const mailContext=(sec.mails||[]).map(m=>(m.subject?'['+m.subject+']\n':'')+m.content).join('\n\n---\n\n');
@@ -1996,7 +1996,7 @@ async function sendChat(overrideMsg){
   const msg=(overrideMsg||inp?.value||'').trim();
   if(!msg) return;
   const key=getApiKey();
-  if(!key){alert('OpenAI API Key를 먼저 설정해주세요');openApiKeyModal();return;}
+  if(!key){alert('Claude API Key를 먼저 설정해주세요');openApiKeyModal();return;}
   if(inp) inp.value='';
 
   chatHistory.push({role:'user',content:msg});
@@ -2269,7 +2269,7 @@ async function generateAiSummary(taskId){
   const t=TASKS.find(t=>t.id==taskId);
   if(!t) return;
   const key=getApiKey();
-  if(!key){alert('OpenAI API Key를 먼저 설정해주세요');openApiKeyModal();return;}
+  if(!key){alert('Claude API Key를 먼저 설정해주세요');openApiKeyModal();return;}
   detailAiLoading=true;render();
 
   const d=detailContent[taskId]||{};
@@ -2505,62 +2505,38 @@ function closeModal(){document.querySelectorAll('.modal-bg').forEach(m=>m.classL
 
 // ─── API KEY ───
 let _cachedApiKey='';
-function getApiKey(){return _cachedApiKey||localStorage.getItem('igis_openai_key')||'';}
+function getApiKey(){return _cachedApiKey||localStorage.getItem('igis_claude_key')||'';}
 
 // OpenAI API 호출 헬퍼
 async function callAI(messages, systemPrompt, maxTokens){
-  // API key 확인
-  var rawKey=getApiKey();
-  if(!rawKey || rawKey.trim()===''){
-    throw new Error('OpenAI API Key가 설정되지 않았어요.\n사이드바 하단 "OpenAI API Key 설정"을 클릭해서 sk-... 키를 입력해주세요.');
-  }
-  // ASCII 범위 밖 문자 완전 제거
-  var key=rawKey.replace(/[^\x20-\x7E]/g,'').trim();
-  if(!key || key.length < 20){
-    throw new Error('API Key가 올바르지 않아요. sk-로 시작하는 키를 다시 입력해주세요.\n사이드바 하단 "OpenAI API Key 설정" 클릭');
-  }
-
-  // 서류 + systemPrompt 합치기
+  // 서류 컨텍스트 추가
   var docsCtx = getDocumentsContext();
   var sysContent = (systemPrompt||'') + (docsCtx||'');
   var cleanMsgs = messages.filter(function(m){ return m.role !== 'system'; });
-  var allMsgs = sysContent ? [{role:'system', content:sysContent}].concat(cleanMsgs) : cleanMsgs;
 
-  var payload = {model:'gpt-4o', messages:allMsgs, max_tokens: maxTokens||1500};
+  var payload = {
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: maxTokens || 1500,
+    messages: cleanMsgs
+  };
+  if(sysContent) payload.system = sysContent;
 
-  return new Promise(function(resolve, reject){
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', 'https://api.openai.com/v1/chat/completions', true);
-    try {
-      xhr.setRequestHeader('Authorization', 'Bearer ' + key);
-      xhr.setRequestHeader('Content-Type', 'application/json');
-    } catch(e) {
-      reject(new Error('헤더 설정 오류: API Key에 특수문자가 있어요. 키를 다시 입력해주세요.'));
-      return;
-    }
-    xhr.onreadystatechange = function(){
-      if(xhr.readyState !== 4) return;
-      if(xhr.status >= 200 && xhr.status < 300){
-        try {
-          var data = JSON.parse(xhr.responseText);
-          var reply = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
-          resolve(reply || '(응답 없음)');
-        } catch(e) { reject(new Error('응답 파싱 오류: ' + e.message)); }
-      } else if(xhr.status === 401) {
-        reject(new Error('API Key가 올바르지 않아요 (401).\n사이드바에서 키를 다시 입력해주세요.'));
-      } else if(xhr.status === 429) {
-        reject(new Error('API 호출 한도 초과 (429). 잠시 후 다시 시도해주세요.'));
-      } else if(xhr.status === 0) {
-        reject(new Error('네트워크 오류 (0). 인터넷 연결을 확인하거나 잠시 후 다시 시도해주세요.'));
-      } else {
-        reject(new Error('API 오류 ' + xhr.status + ': ' + xhr.responseText.slice(0, 200)));
-      }
-    };
-    xhr.onerror = function(){ reject(new Error('네트워크 연결 오류. 인터넷을 확인해주세요.')); };
-    xhr.ontimeout = function(){ reject(new Error('요청 시간 초과. 다시 시도해주세요.')); };
-    xhr.timeout = 30000;
-    xhr.send(JSON.stringify(payload));
+  var response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify(payload)
   });
+
+  if(!response.ok){
+    var err = await response.json().catch(function(){return {};});
+    throw new Error('Claude API 오류 ' + response.status + ': ' + (err.error&&err.error.message||JSON.stringify(err)));
+  }
+  var data = await response.json();
+  return (data.content && data.content[0] && data.content[0].text) || '';
 }
 
 async function callAIOpenAI(messages, sysContent, maxTokens){
@@ -2592,8 +2568,8 @@ function saveApiKey(){
   if(!key){alert('API Key를 입력해주세요');return;}
   _cachedApiKey=key;
   // Firebase + localStorage 둘 다 저장
-  localStorage.setItem('igis_openai_key',key);
-  if(db) db.ref('config/openaiApiKey').set(key);
+  localStorage.setItem('igis_claude_key',key);
+  if(db) db.ref('config/claudeApiKey').set(key);
   closeApiKeyModal();
   alert('저장 완료! 팀원 전체가 이 키를 공유해요.');
 }
@@ -2607,10 +2583,10 @@ function closeApiKeyModal(){document.getElementById('apikey-modal').classList.re
 
 function loadApiKeyFromFirebase(){
   if(!db) return;
-  db.ref('config/openaiApiKey').once('value').then(snap=>{
+  db.ref('config/claudeApiKey').once('value').then(snap=>{
     if(snap.val()){
       _cachedApiKey=snap.val();
-      localStorage.setItem('igis_openai_key',snap.val());
+      localStorage.setItem('igis_claude_key',snap.val());
       console.log('[IGIS] API Key Firebase에서 로드 완료');
     }
   });
@@ -2637,7 +2613,7 @@ async function parseMail(){
   const mailText=document.getElementById('f-mail').value.trim();
   if(!mailText){alert('메일 내용을 입력해주세요');return;}
   const key=getApiKey();
-  if(!key){alert('OpenAI API Key를 먼저 설정해주세요');openApiKeyModal();return;}
+  if(!key){alert('Claude API Key를 먼저 설정해주세요');openApiKeyModal();return;}
 
   document.getElementById('mail-loading').style.display='block';
   document.getElementById('mail-result').style.display='none';
