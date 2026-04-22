@@ -1,0 +1,2795 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IGIS X 더 시우 PROJECT TRACKER</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f6f8;--surface:#ffffff;--surface2:#f0f2f5;--border:#e2e5eb;--border2:#d0d4dc;--text:#0f1117;--text2:#2d3748;--text3:#6b7585;--ic:#5b4cf5;--ic-bg:#ede9ff;--ic-border:#c4b8fd;--dd:#1a6fc4;--dd-bg:#dbeafe;--dd-border:#93c5fd;--tp:#0e7a4e;--tp-bg:#d1fae5;--tp-border:#6ee7b7;--urgent:#dc2626;--urgent-bg:#fee2e2;--high:#d97706;--high-bg:#fef3c7;--done:#0e7a4e;--accent:#5b4cf5}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15.5px;line-height:1.75;-webkit-font-smoothing:antialiased;font-weight:400;}
+
+/* LOADING */
+.loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:16px}
+.loading-logo{font-family:'DM Mono',monospace;font-size:13px;color:var(--text3);letter-spacing:0.15em}
+.loading-spinner{width:24px;height:24px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:12px;color:var(--text3)}
+
+/* CONFIG NOTICE */
+.config-notice{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:998;padding:24px}
+.config-card{background:var(--surface);border:1px solid var(--ic-border);border-radius:16px;padding:32px;max-width:520px;width:100%}
+.config-title{font-size:16px;font-weight:500;color:var(--ic);margin-bottom:8px}
+.config-sub{font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.6}
+.config-field{margin-bottom:12px}
+.config-label{font-size:10px;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;display:block}
+.config-input{width:100%;padding:9px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:12px;font-family:'DM Mono',monospace;outline:none;transition:border-color 0.15s}
+.config-input:focus{border-color:var(--accent)}
+.config-btn{width:100%;padding:11px;border-radius:8px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:14px;font-family:'Noto Sans KR',sans-serif;margin-top:8px}
+.config-btn:hover{opacity:0.85}
+.config-hint{font-size:11px;color:var(--text3);margin-top:12px;line-height:1.6}
+
+/* SYNC INDICATOR */
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--done);margin-left:8px;display:inline-block}
+.sync-dot.syncing{background:var(--high);animation:pulse 1s ease-in-out infinite}
+.sync-dot.offline{background:var(--urgent)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+.header{border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:rgba(245,246,248,0.96);backdrop-filter:blur(8px);z-index:100}
+.header-left{display:flex;align-items:center;gap:14px}
+.logo{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);letter-spacing:0.12em;border:1px solid var(--border2);padding:3px 8px;border-radius:4px}
+.project-title{display:flex;flex-direction:column;gap:0}
+.project-sub{font-size:10px;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase}
+.project-name{font-size:14px;font-weight:500;color:var(--text);letter-spacing:-0.01em}
+.header-right{display:flex;align-items:center;gap:12px}
+.header-date{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)}
+.sync-status{font-size:10px;color:var(--text3);display:flex;align-items:center;gap:4px}
+
+.main{display:grid;grid-template-columns:210px 1fr;min-height:calc(100vh - 53px)}
+.sidebar{border-right:1px solid var(--border);padding:18px 12px;display:flex;flex-direction:column;gap:5px}
+.sidebar-section{font-size:10px;font-weight:500;color:var(--text3);letter-spacing:0.12em;text-transform:uppercase;padding:10px 8px 4px;margin-top:4px}
+.sidebar-section:first-child{margin-top:0}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;cursor:pointer;font-size:14px;color:var(--text2);transition:all 0.15s;border:1px solid transparent}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--surface2);color:var(--text);border-color:var(--border2)}
+.nav-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.nav-count{margin-left:auto;font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);background:var(--surface);padding:1px 5px;border-radius:99px}
+.content{padding:24px 28px;overflow-y:auto}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+.stat-label{font-size:11px;color:var(--text3);margin-bottom:5px;letter-spacing:0.08em;text-transform:uppercase}
+.stat-value{font-size:26px;font-weight:500;font-family:'DM Mono',monospace}
+.stat-sub{font-size:12px;color:var(--text3);margin-top:2px}
+.val-ic{color:var(--ic)}.val-dd{color:var(--dd)}.val-tp{color:var(--tp)}.val-urgent{color:var(--urgent)}
+.progress-section{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px}
+.prog-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all 0.2s}
+.prog-card:hover{border-color:var(--border2);transform:translateY(-1px)}
+.prog-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.prog-title{font-size:14px;font-weight:600}
+.prog-pct{font-family:'DM Mono',monospace;font-size:13px}
+.prog-track{height:3px;background:var(--border);border-radius:99px;overflow:hidden;margin-bottom:7px}
+.prog-fill{height:100%;border-radius:99px;transition:width 0.6s cubic-bezier(0.4,0,0.2,1)}
+.fill-ic{background:var(--ic)}.fill-dd{background:var(--dd)}.fill-tp{background:var(--tp)}
+.prog-nums{font-size:10px;color:var(--text3)}
+.milestone-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px}
+.milestone-header{font-size:10px;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:14px}
+.milestone-strip{display:flex;gap:0;overflow-x:auto;padding-bottom:4px}
+.milestone-item{display:flex;flex-direction:column;align-items:center;flex:1;min-width:86px;position:relative}
+.milestone-item:not(:last-child)::after{content:'';position:absolute;top:8px;left:60%;width:80%;height:1px;background:var(--border)}
+.milestone-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border2);background:var(--surface);margin-bottom:7px;z-index:1;flex-shrink:0}
+.milestone-dot.today{background:var(--ic);border-color:var(--ic);box-shadow:0 0 10px rgba(139,124,248,0.5)}
+.milestone-dot.past{background:var(--done);border-color:var(--done)}
+.milestone-date{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);margin-bottom:1px}
+.milestone-day{font-size:11px;color:var(--ic);margin-bottom:2px}
+.milestone-day.past-day{color:var(--done)}
+.milestone-label{font-size:11px;font-weight:600;color:var(--text);text-align:center;line-height:1.3;max-width:82px}
+.milestone-detail{margin-top:4px;font-size:10px;color:var(--text3);text-align:center;max-width:82px;line-height:1.4}
+.today-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:20px}
+.member-today-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+.member-today-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.member-avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0}
+.member-today-name{font-size:13px;font-weight:600}
+.member-today-count{margin-left:auto;font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)}
+.today-task-item{display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid var(--border)}
+.today-task-item:last-child{border-bottom:none}
+.today-check{width:13px;height:13px;border-radius:3px;border:1.5px solid var(--border2);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.today-check.checked{background:var(--done);border-color:var(--done)}
+.today-check.checked::after{content:'';width:3px;height:5px;border:1.5px solid #0f0f11;border-top:none;border-left:none;transform:rotate(45deg) translateY(-1px)}
+.today-task-name{font-size:12px;color:var(--text);flex:1;line-height:1.5}
+.today-task-name.done{text-decoration:line-through;color:var(--text3)}
+.today-task-cat{font-size:9px;padding:1px 5px;border-radius:99px}
+.phase-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px}
+.phase-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+.phase-card.ic-card{border-color:var(--ic-border);background:var(--ic-bg);}
+.phase-card.dd-card{border-color:var(--dd-border);background:var(--dd-bg)}
+.phase-card.tp-card{border-color:var(--tp-border);background:var(--tp-bg)}
+.phase-title{font-size:12px;font-weight:600;margin-bottom:8px}
+.phase-item{font-size:11px;color:var(--text);padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;align-items:flex-start;gap:5px;line-height:1.4}
+.phase-item:last-child{border-bottom:none}
+.phase-bullet{width:3px;height:3px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.section-title-main{font-size:14px;font-weight:600}
+.task-grid{display:flex;flex-direction:column;gap:4px}
+.task-row{display:flex;align-items:center;gap:9px;padding:9px 11px;background:var(--surface);border:1px solid var(--border);border-radius:9px;transition:all 0.15s;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.task-row:hover{border-color:var(--accent);background:var(--surface2)}
+.task-row.done-row{opacity:0.4}
+.task-check{width:15px;height:15px;border-radius:3px;border:1.5px solid var(--border2);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.task-check.checked{background:var(--done);border-color:var(--done)}
+.task-check.checked::after{content:'';width:3px;height:6px;border:1.5px solid #0f0f11;border-top:none;border-left:none;transform:rotate(45deg) translateY(-1px)}
+.task-name{flex:1;font-size:13px;color:var(--text)}
+.task-name.strikethrough{text-decoration:line-through;color:var(--text3)}
+.task-badges{display:flex;gap:4px;align-items:center;flex-shrink:0}
+.badge{font-size:11px;padding:2px 7px;border-radius:99px;font-weight:500}
+.b-ic{background:var(--ic-bg);color:var(--ic);border:1px solid var(--ic-border)}
+.b-dd{background:var(--dd-bg);color:var(--dd);border:1px solid var(--dd-border)}
+.b-tp{background:var(--tp-bg);color:var(--tp);border:1px solid var(--tp-border)}
+.b-urgent{background:var(--urgent-bg);color:var(--urgent)}
+.b-high{background:var(--high-bg);color:var(--high)}
+.b-normal{background:var(--surface2);color:var(--text3)}
+.b-date{font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);cursor:pointer;padding:2px 5px;border-radius:4px;border:1px solid transparent;transition:all 0.15s}
+.b-date:hover{border-color:var(--accent);background:var(--surface2);color:var(--text)}
+.date-input-inline{font-family:'DM Mono',monospace;font-size:10px;background:var(--surface2);border:1px solid var(--accent);border-radius:4px;color:var(--text);padding:1px 4px;outline:none;width:98px}
+.delete-btn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:0 2px;line-height:1;transition:color 0.15s;flex-shrink:0}
+.delete-btn:hover{color:var(--urgent)}
+.filter-btn{font-size:11px;padding:4px 11px;border-radius:99px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:all 0.15s;font-family:'Noto Sans KR',sans-serif}
+.filter-btn:hover{color:var(--text);border-color:var(--text3)}
+.filter-btn.on{color:var(--text);border-color:var(--text3);background:var(--surface2)}
+.filter-btn.on-ic{color:var(--ic);border-color:var(--ic-border);background:var(--ic-bg)}
+.filter-btn.on-dd{color:var(--dd);border-color:var(--dd-border);background:var(--dd-bg)}
+.filter-btn.on-tp{color:var(--tp);border-color:var(--tp-border);background:var(--tp-bg)}
+.member-tabs{display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap}
+.member-tab{font-size:11px;padding:5px 12px;border-radius:99px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;transition:all 0.15s;font-family:'Noto Sans KR',sans-serif}
+.member-tab:hover{border-color:var(--border2);color:var(--text)}
+.member-tab.active{background:var(--surface2);color:var(--text);border-color:var(--border2)}
+.period-tabs{display:flex;gap:3px;margin-bottom:12px}
+.period-tab{font-size:11px;padding:4px 11px;border-radius:6px;border:1px solid transparent;background:transparent;color:var(--text3);cursor:pointer;transition:all 0.15s;font-family:'Noto Sans KR',sans-serif}
+.period-tab.active{background:var(--surface2);color:var(--text);border-color:var(--border)}
+.add-btn{display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:7px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-size:11px;font-family:'Noto Sans KR',sans-serif;transition:all 0.15s}
+.add-btn:hover{background:var(--surface2);color:var(--text);border-color:var(--accent)}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:200;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:24px;width:420px;max-width:95vw}
+.modal-title{font-size:14px;font-weight:500;margin-bottom:16px;color:var(--text)}
+.form-row{margin-bottom:11px}
+.form-label{font-size:10px;color:var(--text3);margin-bottom:4px;display:block;letter-spacing:0.08em;text-transform:uppercase}
+.form-input{width:100%;padding:8px 11px;background:var(--surface2);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;transition:border-color 0.15s}
+.form-input:focus{border-color:var(--accent)}
+.form-select{appearance:none;cursor:pointer}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.modal-actions{display:flex;gap:7px;justify-content:flex-end;margin-top:16px}
+.btn-cancel{padding:7px 16px;border-radius:7px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-size:13px;font-family:'Noto Sans KR',sans-serif}
+.btn-submit{padding:7px 16px;border-radius:7px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:13px;font-family:'Noto Sans KR',sans-serif}
+.btn-submit:hover{opacity:0.85}
+.checklist-grid{display:flex;flex-direction:column;gap:4px}
+.check-row{display:flex;align-items:center;gap:9px;padding:9px 11px;background:var(--surface);border:1px solid var(--border);border-radius:9px;transition:all 0.15s}
+.check-row:hover{border-color:var(--border2)}
+.check-num{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);width:18px;flex-shrink:0}
+.empty-state{text-align:center;padding:28px;font-size:12px;color:var(--text3)}
+.check-edit-input{flex:1;background:transparent;border:none;border-bottom:1px solid var(--accent);color:var(--text);font-size:12px;font-family:'Noto Sans KR',sans-serif;outline:none;padding:1px 4px;min-width:0}
+.cat-pill{font-size:10px;padding:2px 7px;border-radius:99px;cursor:pointer;border:1px solid transparent;transition:all 0.15s;white-space:nowrap}
+.cat-pill:hover{opacity:0.8}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
+
+.task-name{font-weight:500}
+.today-task-name{font-weight:500}
+.phase-item{font-weight:500}
+.milestone-label{font-weight:700}
+.section-title-main{font-weight:700}
+.member-today-name{font-weight:700}
+</style>
+</head>
+<body>
+
+<!-- 로딩 -->
+<div id="loading-screen" class="loading-screen">
+  <div class="loading-logo">IGIS X PROJECT TRACKER</div>
+  <div class="loading-spinner"></div>
+  <div class="loading-text" id="loading-text">Firebase 연결 중...</div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-bg" id="task-modal">
+  <div class="modal">
+    <div class="modal-title">태스크 추가</div>
+    <div class="form-row">
+      <label class="form-label">할 일</label>
+      <input class="form-input" id="f-name" placeholder="태스크 내용 입력" />
+    </div>
+    <div class="form-row-2">
+      <div class="form-row" style="margin-bottom:0">
+        <label class="form-label">담당자 (복수 선택 가능)</label>
+        <div id="f-member" style="display:flex;flex-direction:column;gap:5px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border2);border-radius:7px">
+          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;color:var(--text2)"><input type="checkbox" value="박기범 팀장님" style="accent-color:var(--accent)"> 박기범 팀장님</label>
+          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;color:var(--text2)"><input type="checkbox" value="김준형 프로" style="accent-color:var(--accent)"> 김준형 프로</label>
+          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;color:var(--text2)"><input type="checkbox" value="이광호 프로" style="accent-color:var(--accent)"> 이광호 프로</label>
+          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;color:var(--text2)"><input type="checkbox" value="오정희 프로" style="accent-color:var(--accent)"> 오정희 프로</label>
+        </div>
+      </div>
+      <div class="form-row" style="margin-bottom:0">
+        <label class="form-label">범주</label>
+        <select class="form-input form-select" id="f-cat">
+        </select>
+      </div>
+    </div>
+    <div class="form-row-2" style="margin-top:11px">
+      <div class="form-row" style="margin-bottom:0">
+        <label class="form-label">기한</label>
+        <input class="form-input" type="date" id="f-due" />
+      </div>
+      <div class="form-row" style="margin-bottom:0">
+        <label class="form-label">우선순위</label>
+        <select class="form-input form-select" id="f-priority">
+          <option value="긴급">긴급</option>
+          <option value="높음">높음</option>
+          <option value="보통" selected>보통</option>
+          <option value="낮음">낮음</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">취소</button>
+      <button class="btn-submit" onclick="submitTask()">추가</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="check-modal">
+  <div class="modal">
+    <div class="modal-title">체크리스트 항목 추가</div>
+    <div class="form-row">
+      <label class="form-label">항목 내용</label>
+      <input class="form-input" id="f-check" placeholder="확인해야 할 내용 입력" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">취소</button>
+      <button class="btn-submit" onclick="submitCheck()">추가</button>
+    </div>
+  </div>
+</div>
+
+<!-- CAT & PRIORITY MODAL -->
+<div class="modal-bg" id="catpri-modal">
+  <div class="modal" style="width:480px">
+    <div class="modal-title">범주 · 중요도 관리</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div style="font-size:11px;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+          <span>업무 범주</span>
+          <button onclick="addCat()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:13px">+</button>
+        </div>
+        <div id="cat-manage-list" style="display:flex;flex-direction:column;gap:4px"></div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+          <span>중요도</span>
+          <button onclick="addPriority()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:13px">+</button>
+        </div>
+        <div id="pri-manage-list" style="display:flex;flex-direction:column;gap:4px"></div>
+      </div>
+    </div>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn-submit" onclick="closeCatPriModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- INLINE DROPDOWN (범주/중요도 변경) -->
+<div id="inline-dropdown" style="display:none;position:fixed;z-index:300;background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:4px;min-width:100px;box-shadow:0 4px 16px rgba(0,0,0,0.4)"></div>
+
+<!-- MAIL PARSING MODAL -->
+<div class="modal-bg" id="mail-modal">
+  <div class="modal" style="width:560px;max-width:96vw">
+    <div class="modal-title">메일 → 태스크 자동 파싱</div>
+    <div class="form-row">
+      <label class="form-label">메일 내용 붙여넣기</label>
+      <textarea class="form-input" id="f-mail" placeholder="메일 내용을 여기에 붙여넣으세요. GPT-4o가 자동으로 할 일, 담당자, 기한을 추출해요." style="height:180px;resize:vertical;line-height:1.6"></textarea>
+    </div>
+    <div id="mail-result" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:11px;color:var(--text3);letter-spacing:0.06em;text-transform:uppercase">추출된 태스크 — 체크 후 추가</div>
+        <div style="display:flex;gap:6px">
+          <button onclick="selectAllParsed(true)" style="font-size:10px;padding:3px 8px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer">전체선택</button>
+          <button onclick="selectAllParsed(false)" style="font-size:10px;padding:3px 8px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer">전체해제</button>
+        </div>
+      </div>
+      <div id="mail-task-list" style="display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto;padding-right:2px"></div>
+      <button onclick="addSelectedTasks()" style="width:100%;margin-top:12px;padding:9px;border-radius:8px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:13px;font-family:'Noto Sans KR',sans-serif">선택한 태스크 Firebase에 추가</button>
+    </div>
+    <div id="mail-loading" style="display:none;text-align:center;padding:24px;color:var(--text3);font-size:13px">
+      <div style="width:20px;height:20px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 10px"></div>
+      GPT-4o가 메일을 분석하는 중...
+    </div>
+    <div id="mail-error" style="display:none;color:var(--urgent);font-size:12px;margin-top:8px;padding:8px 10px;background:var(--urgent-bg);border-radius:6px"></div>
+    <div class="modal-actions" style="margin-top:14px">
+      <button class="btn-cancel" onclick="closeMailModal()">닫기</button>
+      <button class="btn-submit" onclick="parseMail()" id="parse-btn">AI 분석</button>
+    </div>
+  </div>
+</div>
+
+<!-- API KEY MODAL -->
+<div class="modal-bg" id="apikey-modal">
+  <div class="modal" style="width:420px">
+    <div class="modal-title">OpenAI API Key 설정</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.6">
+      한 번 저장하면 <strong style="color:var(--ic)">팀원 전체가 공유</strong>해요. Firebase에 저장됩니다.<br>
+      <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--ic)">platform.openai.com/api-keys</a>에서 발급받으세요. (sk-...)
+    </div>
+    <div class="form-row">
+      <label class="form-label">API Key</label>
+      <input class="form-input" id="f-apikey" type="password" placeholder="sk-ant-api03-..." />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeApiKeyModal()">취소</button>
+      <button class="btn-submit" onclick="saveApiKey()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none">
+  <header class="header">
+    <div class="header-left">
+      <span class="logo">IGIS X</span>
+      <div class="project-title">
+        <span class="project-sub">더 시우</span>
+        <span class="project-name">PROJECT TRACKER</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="sync-status">
+        <span id="sync-text">실시간 연결됨</span>
+        <span class="sync-dot" id="sync-dot"></span>
+      </div>
+      <span class="header-date" id="header-date"></span>
+    </div>
+  </header>
+
+  <div class="main">
+    <aside class="sidebar">
+      <div class="sidebar-section">Overview</div>
+      <div class="nav-item active" id="nav-dashboard" onclick="showView('dashboard')">
+        <div class="nav-dot" style="background:#8b7cf8"></div>대시보드
+      </div>
+      <div class="nav-item" id="nav-schedule" onclick="showView('schedule')">
+        <div class="nav-dot" style="background:#ffb347"></div>프로젝트 일정표
+      </div>
+      <div class="nav-item" id="nav-chat" onclick="showView('chat')">
+        <div class="nav-dot" style="background:#4ecb71"></div>AI 채팅
+      </div>
+      <div class="nav-item" id="nav-checklist" onclick="showView('checklist')">
+        <div class="nav-dot" style="background:#ff6b6b"></div>체크리스트
+        <span class="nav-count" id="nav-check-count">0</span>
+      </div>
+      <div class="sidebar-section" style="display:flex;justify-content:space-between;align-items:center">
+        <span>업무 범주</span>
+        <button onclick="openCatPriModal()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;line-height:1" title="범주/중요도 관리">⚙</button>
+      </div>
+      <div id="sidebar-cats"></div>
+      <div class="sidebar-section">담당자</div>
+      <div class="nav-item" onclick="showView('tasks');setMemberFilter('박기범 팀장님')">
+        <div class="nav-dot" style="background:#4da6ff"></div>박기범 팀장님
+      </div>
+      <div class="nav-item" onclick="showView('tasks');setMemberFilter('김준형 프로')">
+        <div class="nav-dot" style="background:#4ecb71"></div>김준형 프로
+      </div>
+      <div class="nav-item" onclick="showView('tasks');setMemberFilter('이광호 프로')">
+        <div class="nav-dot" style="background:#ffb347"></div>이광호 프로
+      </div>
+      <div class="nav-item" onclick="showView('tasks');setMemberFilter('오정희 프로')">
+        <div class="nav-dot" style="background:#ff6b6b"></div>오정희 프로
+      </div>
+      <div class="sidebar-section" style="margin-top:auto">도구</div>
+      <div class="nav-item" onclick="openMailModal()" style="color:var(--ic);font-size:12px">
+        <div class="nav-dot" style="background:var(--ic)"></div>메일 → 태스크 파싱
+      </div>
+      <div class="sidebar-section">설정</div>
+      <div class="nav-item" onclick="openApiKeyModal()" style="color:var(--text3);font-size:11px">
+        <div class="nav-dot" style="background:var(--text3)"></div>OpenAI API Key 설정
+      </div>
+      <div class="nav-item" onclick="forceUploadWiki()" style="color:var(--ic);font-size:11px">
+        <div class="nav-dot" style="background:var(--ic)"></div>Wiki 데이터 업로드
+      </div>
+      <div class="nav-item" onclick="forceUploadSchedule()" style="color:var(--high);font-size:11px">
+        <div class="nav-dot" style="background:var(--high)"></div>일정표 초기화
+      </div>
+      <div class="nav-item" onclick="forceResetAllTasks()" style="color:var(--urgent);font-size:11px">
+        <div class="nav-dot" style="background:var(--urgent)"></div>태스크 전체 초기화
+      </div>
+      <div class="nav-item" onclick="forceUploadWeeklyTasks()" style="color:var(--tp);font-size:11px">
+        <div class="nav-dot" style="background:var(--tp)"></div>이번주 태스크 업로드
+      </div>
+      <div class="nav-item" onclick="resetConfig()" style="color:var(--text3);font-size:11px">
+        <div class="nav-dot" style="background:var(--text3)"></div>Firebase 재설정
+      </div>
+    </aside>
+    <main class="content" id="main-content"></main>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+<script>
+const NOW=new Date();
+const TODAY=NOW.toISOString().split('T')[0];
+const wd=NOW.getDay(),diff=wd===0?0:7-wd;
+const weekEndD=new Date(NOW);weekEndD.setDate(NOW.getDate()+diff);
+const WEEK_END=weekEndD.toISOString().split('T')[0];
+const DAYS=['일','월','화','수','목','금','토'];
+
+function getDayLabel(s){if(!s)return '';const d=new Date(s+'T00:00:00');return '('+DAYS[d.getDay()]+')';}
+function isPast(s){return s&&s<TODAY;}
+function formatDate(d){if(!d)return '';const p=d.split('-');return p[1].replace(/^0/,'')+'/'+p[2].replace(/^0/,'');}
+
+const DEFAULT_MILESTONES=[
+  {dateStr:'2026-04-21',label:'선행결정',detail:'Operator 선정\nBudget 확정'},
+  {dateStr:'2026-04-24',label:'1차 IC LOI',detail:'1차 IC LOI\n(목표)'},
+  {dateStr:'2026-04-28',label:'MOU 연장',detail:'TIC·FINANCING\n조건 확정\nDD 결과'},
+  {dateStr:'2026-05-22',label:'2차 IC',detail:'2차 IC COMMIT\nOperator 마케팅'},
+  {dateStr:'2026-05-28',label:'SPA 체결',detail:'대주 IC 협의\n기존 대주 동의'},
+  {dateStr:'2026-06-30',label:'3차 IC LOC',detail:'Legal Confirm\nSPC 이사회\n거래등기'},
+  {dateStr:'2026-08-30',label:'준공/CLOSING',detail:'보존등기\n임대사업자 등록\n투목등기 완료'},
+];
+
+const DEFAULT_PHASE_ITEMS={
+  IC:['Operator 선정','Budget 확정','TIC / FINANCING 조건 확정','Operator 마케팅 방안','김앤장 Fee 확인','대주 IC 선행사항 (Equity Commit)','MOU 기간 연장 방식 결정','신규 대주 담보 설정','SPC 분할 여부','IM 작성'],
+  DD:['Legal DD — SPA 초안','Legal DD — 양도인 KYC (덴스톤)','Legal DD — SPC·Asset','Legal DD — 기존 대주 동의','Finance DD — 재무모델','Finance DD — 재무실사','Tax DD — 취득세','Tax DD — 법인세','Tax DD — 종부세','MOU 기간 연장방법 확인','DD document 수집·정리'],
+  TP:['건설형 임대 등록 (기존 대주 동의)','투목 전환 — 정관변경(등)','단일 사업자 전환','본점 이전(등)','상근 임직원(등)','준공·보존등기','보증금 반환보험','근저당 설정','건설형 임대사업자 등록','공급 신고','투목 등기 완료'],
+};
+
+const DEFAULT_TASKS=[
+  // ══════════════════════════════════════════════════
+  // IC | 내부심사
+  // ══════════════════════════════════════════════════
+  {id:1,name:'1차 IC LOI 작성 및 발송',member:['김준형 프로','오정희 프로'],cat:'IC',due:'2026-04-24',priority:'긴급',status:'Not started'},
+  {id:2,name:'2차 IC COMMITMENT 준비 (TIC/FINANCING/Operator/DD결과)',member:['김준형 프로','오정희 프로'],cat:'IC',due:'2026-05-22',priority:'높음',status:'Not started'},
+  {id:3,name:'3차 IC LOC 준비 (대주 IC 완료 후)',member:['김준형 프로','오정희 프로'],cat:'IC',due:'2026-06-30',priority:'보통',status:'Not started'},
+  {id:4,name:'M&G 상위펀드(회사형) 내부심사',member:['오정희 프로'],cat:'IC',due:'2026-08-21',priority:'보통',status:'Not started'},
+  {id:5,name:'IGISX REF(신탁형) 내부심사',member:['오정희 프로'],cat:'IC',due:'2026-08-28',priority:'보통',status:'Not started'},
+  // IC | 대출
+  {id:6,name:'대출 투자심의',member:['박기범 팀장님'],cat:'IC',due:'2026-07-07',priority:'보통',status:'Not started'},
+  {id:7,name:'대출 투자승인',member:['박기범 팀장님'],cat:'IC',due:'2026-08-06',priority:'보통',status:'Not started'},
+  {id:8,name:'대출약정',member:['박기범 팀장님'],cat:'IC',due:'2026-08-21',priority:'보통',status:'Not started'},
+  {id:9,name:'계좌개설',member:['오정희 프로'],cat:'IC',due:'2026-08-26',priority:'보통',status:'Not started'},
+  {id:10,name:'대출실행통지',member:['박기범 팀장님'],cat:'IC',due:'2026-08-29',priority:'보통',status:'Not started'},
+  {id:11,name:'대출실행 (준공/클로징 동시)',member:['박기범 팀장님'],cat:'IC',due:'2026-08-30',priority:'높음',status:'Not started'},
+  // IC | MOU / 관계인 / 펀드약관
+  {id:12,name:'MOU 연장 방법 확정 및 실행 (공문/변경계약/별도합의서)',member:['박기범 팀장님','김준형 프로'],cat:'IC',due:'2026-04-28',priority:'긴급',status:'Not started'},
+  {id:13,name:'관계인 동의 취득',member:['박기범 팀장님'],cat:'IC',due:'2026-05-30',priority:'높음',status:'Not started'},
+  {id:14,name:'펀드 약관 작성 (Hold Co/Prop Co)',member:['오정희 프로','김준형 프로'],cat:'IC',due:'2026-08-30',priority:'보통',status:'Not started'},
+  // IC | 계약체결 M&G REF (항목별 분리)
+  {id:15,name:'자산관리계약 체결 (M&G REF)',member:['오정희 프로'],cat:'IC',due:'2026-08-21',priority:'보통',status:'Not started'},
+  {id:16,name:'신탁계약 체결 (M&G REF)',member:['오정희 프로'],cat:'IC',due:'2026-08-21',priority:'보통',status:'Not started'},
+  {id:17,name:'판매계약 체결 (M&G REF)',member:['오정희 프로'],cat:'IC',due:'2026-08-21',priority:'보통',status:'Not started'},
+  {id:18,name:'핵심투자설명서 작성 (M&G REF)',member:['오정희 프로'],cat:'IC',due:'2026-08-21',priority:'보통',status:'Not started'},
+  {id:19,name:'사무수탁계약 체결 (M&G REF)',member:['오정희 프로'],cat:'IC',due:'2026-08-21',priority:'긴급',status:'Not started'},
+  {id:20,name:'정관 작성 (M&G REF)',member:['김준형 프로'],cat:'IC',due:'2026-08-01',priority:'높음',status:'Not started'},
+  {id:21,name:'설립등기 (M&G REF)',member:['김준형 프로'],cat:'IC',due:'2026-08-21',priority:'보통',status:'Not started'},
+  // IC | 계약체결 IGISX REF (항목별 분리)
+  {id:22,name:'자산관리계약 체결 (IGISX REF)',member:['오정희 프로'],cat:'IC',due:'2026-08-21',priority:'보통',status:'Not started'},
+  {id:23,name:'신탁계약 체결 (IGISX REF)',member:['오정희 프로'],cat:'IC',due:'2026-08-21',priority:'보통',status:'Not started'},
+  {id:24,name:'판매계약 체결 (IGISX REF)',member:['오정희 프로'],cat:'IC',due:'2026-08-21',priority:'보통',status:'Not started'},
+  {id:25,name:'핵심투자설명서 작성 (IGISX REF)',member:['오정희 프로'],cat:'IC',due:'2026-08-21',priority:'보통',status:'Not started'},
+  {id:26,name:'사무수탁계약 체결 (IGISX REF)',member:['오정희 프로'],cat:'IC',due:'2026-08-21',priority:'보통',status:'Not started'},
+  // IC | PM/FM 계약
+  {id:27,name:'PM 계약 체결',member:['박기범 팀장님'],cat:'IC',due:'2026-09-01',priority:'보통',status:'Not started'},
+  {id:28,name:'FM 계약 체결',member:['박기범 팀장님'],cat:'IC',due:'2026-09-01',priority:'보통',status:'Not started'},
+  // IC | M&G 투자심의
+  {id:29,name:'[M&G] 1차 투자심의',member:['박기범 팀장님'],cat:'IC',due:'2026-04-30',priority:'긴급',status:'Not started'},
+  {id:30,name:'[M&G] 2차 투자심의 COMMITMENT',member:['박기범 팀장님'],cat:'IC',due:'2026-05-22',priority:'높음',status:'Not started'},
+  {id:31,name:'[M&G] 3차 투자심의 LOC',member:['박기범 팀장님'],cat:'IC',due:'2026-06-30',priority:'보통',status:'Not started'},
+  {id:32,name:'[M&G] Capital Call',member:['박기범 팀장님','오정희 프로'],cat:'IC',due:'2026-08-31',priority:'보통',status:'Not started'},
+  {id:33,name:'금융감독원 보고',member:['오정희 프로'],cat:'IC',due:'2026-09-05',priority:'보통',status:'Not started'},
+  // ══════════════════════════════════════════════════
+  // DD | 법률실사 (항목별 분리)
+  // ══════════════════════════════════════════════════
+  {id:34,name:'법률실사 - SPA 초안 (1st Draft)',member:['김준형 프로'],cat:'DD',due:'2026-05-15',priority:'긴급',status:'Not started'},
+  {id:35,name:'법률실사 - SPA 초안 (Final)',member:['김준형 프로'],cat:'DD',due:'2026-06-30',priority:'높음',status:'Not started'},
+  {id:36,name:'법률실사 - 양도인 관련 사항 (1st Draft)',member:['김준형 프로'],cat:'DD',due:'2026-05-15',priority:'긴급',status:'Not started'},
+  {id:37,name:'법률실사 - 양도인 관련 사항 (Final)',member:['김준형 프로'],cat:'DD',due:'2026-06-30',priority:'높음',status:'Not started'},
+  {id:38,name:'법률실사 - SPC 관련 사항 (1st Draft)',member:['김준형 프로'],cat:'DD',due:'2026-05-15',priority:'긴급',status:'Not started'},
+  {id:39,name:'법률실사 - SPC 관련 사항 (Final)',member:['김준형 프로'],cat:'DD',due:'2026-06-30',priority:'높음',status:'Not started'},
+  {id:40,name:'법률실사 - Asset 관련 사항 (1st Draft)',member:['김준형 프로'],cat:'DD',due:'2026-05-15',priority:'긴급',status:'Not started'},
+  {id:41,name:'법률실사 - Asset 관련 사항 (Final)',member:['김준형 프로'],cat:'DD',due:'2026-06-30',priority:'높음',status:'Not started'},
+  {id:42,name:'법률실사 - 기존 대주 동의서 확인',member:['김준형 프로'],cat:'DD',due:'2026-05-15',priority:'긴급',status:'Not started'},
+  {id:43,name:'법률실사 - SPC 신규 정관 검토',member:['김준형 프로'],cat:'DD',due:'2026-05-15',priority:'긴급',status:'Not started'},
+  {id:44,name:'법률실사 - Loan Document 검토',member:['김준형 프로'],cat:'DD',due:'2026-05-15',priority:'긴급',status:'Not started'},
+  {id:45,name:'양도인 KYC - 범죄이력 조회 (by 덴스톤)',member:['김준형 프로'],cat:'DD',due:'2026-05-15',priority:'긴급',status:'Not started'},
+  // DD | 재무실사
+  {id:46,name:'재무실사 - 재무모델 및 재무실사 (1st Draft)',member:['김준형 프로'],cat:'DD',due:'2026-05-15',priority:'긴급',status:'Not started'},
+  {id:47,name:'재무실사 - 재무모델 및 재무실사 (Final)',member:['김준형 프로'],cat:'DD',due:'2026-06-30',priority:'높음',status:'Not started'},
+  // DD | 세무실사
+  {id:48,name:'세무실사 Tax DD - 취득세/법인세/종부세 (1st Draft)',member:['오정희 프로'],cat:'DD',due:'2026-05-15',priority:'긴급',status:'Not started'},
+  {id:49,name:'세무실사 Tax DD - 취득세/법인세/종부세 (Final)',member:['오정희 프로'],cat:'DD',due:'2026-06-30',priority:'높음',status:'Not started'},
+  // DD | 물리/시장/ESG
+  {id:50,name:'물리실사 Physical DD (1st Draft)',member:['오정희 프로'],cat:'DD',due:'2026-05-15',priority:'높음',status:'Not started'},
+  {id:51,name:'물리실사 Physical DD (Final)',member:['오정희 프로'],cat:'DD',due:'2026-06-30',priority:'보통',status:'Not started'},
+  {id:52,name:'시장실사 Market DD (1st Draft)',member:['오정희 프로'],cat:'DD',due:'2026-05-15',priority:'높음',status:'Not started'},
+  {id:53,name:'시장실사 Market DD (Final)',member:['오정희 프로'],cat:'DD',due:'2026-06-30',priority:'보통',status:'Not started'},
+  {id:54,name:'ESG 실사 (1st Draft)',member:['오정희 프로'],cat:'DD',due:'2026-05-15',priority:'높음',status:'Not started'},
+  {id:55,name:'ESG 실사 (Final)',member:['오정희 프로'],cat:'DD',due:'2026-06-30',priority:'보통',status:'Not started'},
+  {id:56,name:'Insurance Valuation (1st Draft)',member:['오정희 프로'],cat:'DD',due:'2026-05-15',priority:'높음',status:'Not started'},
+  {id:57,name:'Insurance Valuation (Final)',member:['오정희 프로'],cat:'DD',due:'2026-06-30',priority:'보통',status:'Not started'},
+  {id:58,name:'Acquisition Valuation (1st Draft)',member:['오정희 프로'],cat:'DD',due:'2026-05-15',priority:'높음',status:'Not started'},
+  {id:59,name:'Acquisition Valuation (Final)',member:['오정희 프로'],cat:'DD',due:'2026-06-30',priority:'보통',status:'Not started'},
+  // DD | 감정평가
+  {id:60,name:'감정평가 Appraisal (1st Draft)',member:['오정희 프로'],cat:'DD',due:'2026-08-01',priority:'보통',status:'Not started'},
+  {id:61,name:'감정평가 Appraisal (Final)',member:['오정희 프로'],cat:'DD',due:'2026-08-31',priority:'보통',status:'Not started'},
+  // DD | 기타
+  {id:62,name:'취득세 납부',member:['오정희 프로'],cat:'DD',due:'2026-08-30',priority:'보통',status:'Not started'},
+  // ══════════════════════════════════════════════════
+  // TP | 투목전환
+  // ══════════════════════════════════════════════════
+  {id:63,name:'건설형 임대사업자 등록 - 기존 대주 동의 취득',member:['이광호 프로','김준형 프로'],cat:'TP',due:'2026-05-28',priority:'긴급',status:'Not started'},
+  {id:64,name:'투목 전환 절차 (정관변경/단일사업자/본점이전/상근임직원)',member:['이광호 프로','김준형 프로'],cat:'TP',due:'2026-05-28',priority:'긴급',status:'Not started'},
+  {id:65,name:'이사회/주총 - 정관 변경 등 (등기)',member:['김준형 프로'],cat:'TP',due:'2026-05-30',priority:'높음',status:'Not started'},
+  {id:66,name:'이사회/주총 - SPA체결/양수도 결의 (등기)',member:['김준형 프로'],cat:'TP',due:'2026-06-30',priority:'높음',status:'Not started'},
+  {id:67,name:'이사회/주총 - 대표자/주주 변경 (등기)',member:['김준형 프로'],cat:'TP',due:'2026-08-31',priority:'보통',status:'Not started'},
+  // TP | Legal Confirm
+  {id:68,name:'SPC 이사회/주총 - 거래 관련 결의 및 Legal Confirm (등기)',member:['김준형 프로'],cat:'TP',due:'2026-08-30',priority:'높음',status:'Not started'},
+  {id:69,name:'SPC 이사회/주총 - 투목 변경 결의 및 Legal Confirm (등기)',member:['김준형 프로'],cat:'TP',due:'2026-08-30',priority:'높음',status:'Not started'},
+  // TP | 건축주/임대/신탁
+  {id:70,name:'건축주 명의변경',member:['이광호 프로'],cat:'TP',due:'2026-05-30',priority:'긴급',status:'Not started'},
+  {id:71,name:'임대사업자 등록',member:['이광호 프로'],cat:'TP',due:'2026-06-30',priority:'높음',status:'Not started'},
+  {id:72,name:'신탁해지',member:['김준형 프로'],cat:'TP',due:'2026-09-01',priority:'보통',status:'Not started'},
+  {id:73,name:'임대보증금 보험 가입',member:['이광호 프로'],cat:'TP',due:'2026-08-31',priority:'보통',status:'Not started'},
+  {id:74,name:'민간임대주택 공급신고',member:['이광호 프로'],cat:'TP',due:'2026-09-01',priority:'보통',status:'Not started'},
+  // TP | 준공/Closing
+  {id:75,name:'사용승인',member:['이광호 프로'],cat:'TP',due:'2026-08-30',priority:'높음',status:'Not started'},
+  {id:76,name:'준공/보존등기',member:['이광호 프로'],cat:'TP',due:'2026-08-30',priority:'높음',status:'Not started'},
+  {id:77,name:'근저당 설정',member:['이광호 프로','박기범 팀장님'],cat:'TP',due:'2026-08-30',priority:'높음',status:'Not started'},
+  {id:78,name:'건설형 임대사업자 등록 - 보증금 반환보험 가입',member:['이광호 프로'],cat:'TP',due:'2026-08-30',priority:'높음',status:'Not started'},
+  {id:79,name:'공급 신고',member:['이광호 프로'],cat:'TP',due:'2026-08-30',priority:'보통',status:'Not started'},
+  {id:80,name:'투목 등기 (클로징 동시 처리)',member:['김준형 프로','이광호 프로'],cat:'TP',due:'2026-08-30',priority:'높음',status:'Not started'},
+  // TP | Post-Closing
+  {id:81,name:'임원변경등기',member:['김준형 프로'],cat:'TP',due:'2026-09-05',priority:'보통',status:'Not started'},
+  {id:82,name:'사업자등록증 갱신',member:['이광호 프로'],cat:'TP',due:'2026-09-05',priority:'보통',status:'Not started'},
+  {id:83,name:'임대사업자 대표자 변경',member:['이광호 프로'],cat:'TP',due:'2026-09-05',priority:'보통',status:'Not started'},
+];
+
+const DEFAULT_CHECKLIST=[
+  {id:'c1',text:'M&G 2차 IC 주요내용 검토',done:false},
+  {id:'c2',text:'법률실사, 재무실사 Coverage 확인',done:false},
+  {id:'c3',text:'기업결합신고 여부 확인',done:false},
+  {id:'c4',text:'김앤장 Fee 확인',done:false},
+  {id:'c5',text:'양정례 KYC (범죄, 덴스톤) 진행',done:false},
+  {id:'c6',text:'대주 IC 선행 사항 (Equity Commit 등) 확인',done:false},
+  {id:'c7',text:'MOU 기간 연장 방식 결정 (김앤장, 내부 컴플)',done:false},
+  {id:'c8',text:'신규 대주 담보 설정 방식 확인',done:false},
+  {id:'c9',text:'기존 신탁사 확인 — 임대사업자 범위',done:false},
+  {id:'c10',text:'기존 신탁사 확인 — 신탁 해지 조건',done:false},
+  {id:'c11',text:'SPC 분할 여부 검토',done:false},
+  {id:'c12',text:'IM 작성',done:false},
+];
+
+// 범주 팔레트 (색상 순환)
+const CAT_PALETTE=[
+  {bg:'#ede9ff',color:'#5b4cf5',border:'#c4b8fd'},
+  {bg:'#dbeafe',color:'#1a6fc4',border:'#93c5fd'},
+  {bg:'#d1fae5',color:'#0e7a4e',border:'#6ee7b7'},
+  {bg:'#fef3c7',color:'#d97706',border:'#fcd34d'},
+  {bg:'#fce7f3',color:'#be185d',border:'#f9a8d4'},
+  {bg:'#e0f2fe',color:'#0369a1',border:'#7dd3fc'},
+  {bg:'#fef2f2',color:'#dc2626',border:'#fca5a5'},
+];
+// 중요도 옵션 (수정 가능)
+const DEFAULT_PRIORITIES=['긴급','높음','보통','낮음'];
+let CATS=[],PRIORITIES=[];
+
+function getCatStyle(catName){
+  const idx=CATS.findIndex(c=>c.name===catName);
+  return CAT_PALETTE[idx>=0?idx%CAT_PALETTE.length:0];
+}
+function getPriColor(p){return{긴급:'var(--urgent)',높음:'var(--high)',보통:'var(--text3)',낮음:'var(--text3)'}[p]||'var(--text3)';}
+function getPriBg(p){return{긴급:'var(--urgent-bg)',높음:'var(--high-bg)',보통:'var(--surface2)',낮음:'var(--surface2)'}[p]||'var(--surface2)';}
+
+let db=null,TASKS=[],CHECKLIST=[],nextTaskId=84,editingDueId=null,editingCheckId=null,editingNameId=null;
+let MILESTONES_DATA=[],PHASE_DATA={IC:[],DD:[],TP:[]},editingMemberId=null;
+let WIKI_DATA={};  // catName → {sections:[{id,title,content,docs:[],status,updatedAt}]}
+
+// 프로젝트 일정표 기본 데이터
+const DEFAULT_SCHEDULE=[
+  // ── 양도인 | 투자목적회사 전환 ────────────────────────────
+  {id:'s1',party:'양도인',category:'투자목적회사 전환',item:'이사회/주총 - 정관 변경 등 (등기)',draftDate:'2026-05-16',confirmedDate:'2026-05-30',cat:'TP',status:'진행전',members:['김준형 프로'],
+   prereq:'SPA 체결 전 완료 필요',
+   todos:['정관 변경안 작성','이사회/주총 소집 통지','결의 및 등기 신청']},
+  {id:'s2',party:'양도인',category:'투자목적회사 전환',item:'이사회/주총 - SPA체결/양수도 결의 (등기)',draftDate:'2026-06-16',confirmedDate:'2026-06-30',cat:'TP',status:'진행전',members:['김준형 프로'],
+   prereq:'SPA 초안 완성 후',
+   todos:['SPA 체결 전 결의','양수도 관련 이사회 결의','등기 신청']},
+  {id:'s3',party:'양도인',category:'투자목적회사 전환',item:'이사회/주총 - 대표자/주주 변경 (등기)',draftDate:'2026-08-17',confirmedDate:'2026-08-31',cat:'TP',status:'진행전',members:['김준형 프로'],
+   prereq:'준공/Closing 전',
+   todos:['대표자 변경 결의','주주 변경 등기 신청']},
+  // ── 양도인 | 관계인 동의 ──────────────────────────────────
+  {id:'s4',party:'양도인',category:'관계인 동의',item:'관계인 동의 취득',draftDate:'2026-04-30',confirmedDate:'2026-05-30',cat:'IC',status:'진행전',members:['박기범 팀장님'],
+   prereq:'MOU 연장 실행 후',
+   todos:['관계인 목록 확정','동의서 작성','서명 수령']},
+  // ── 양도인 | 건축주 명의변경 ─────────────────────────────
+  {id:'s5',party:'양도인',category:'건축주 명의변경',item:'건축주 명의변경',draftDate:'2026-04-30',confirmedDate:'2026-05-30',cat:'TP',status:'진행전',members:['이광호 프로'],
+   prereq:'기존 대주 동의 선행',
+   todos:['건축주 명의변경 서류 준비','관할 관청 신청','완료 확인']},
+  // ── 양도인 | 임대사업자 등록 ─────────────────────────────
+  {id:'s6',party:'양도인',category:'임대사업자 등록',item:'건설형 임대사업자 등록 (기존 대주 동의 후)',draftDate:'2026-05-31',confirmedDate:'2026-06-30',cat:'TP',status:'진행전',members:['이광호 프로'],
+   prereq:'건축주 명의변경 완료 후',
+   todos:['임대사업자 등록 신청 서류 준비','관할 지자체 신청','등록증 수령']},
+  // ── 양도인 | 임대보증금보험 ──────────────────────────────
+  {id:'s7',party:'양도인',category:'임대보증금보험 가입',item:'임대보증금 보험 가입',draftDate:'2026-08-01',confirmedDate:'2026-08-30',cat:'TP',status:'진행전',members:['이광호 프로'],
+   prereq:'준공 후 임대사업자 등록 완료',
+   todos:['보험사 선정','가입 서류 준비','가입 완료']},
+  // ── 양도인 | 공급신고 ────────────────────────────────────
+  {id:'s8',party:'양도인',category:'민간임대주택 공급신고',item:'민간임대주택 공급신고',draftDate:'2026-08-01',confirmedDate:'2026-08-30',cat:'TP',status:'진행전',members:['이광호 프로'],
+   prereq:'임대사업자 등록 완료 후',
+   todos:['공급 신고 서류 준비','관할 지자체 신고']},
+  // ── 양도인 | 신탁해지 ────────────────────────────────────
+  {id:'s9',party:'양도인',category:'신탁해지',item:'신탁해지',draftDate:'',confirmedDate:'2026-09-01',cat:'TP',status:'진행전',members:['김준형 프로'],
+   prereq:'SPA 종결 시 동시 처리',
+   todos:['신탁 해지 신청서 준비','신탁사 협의','해지 실행']},
+  // ── 양도인 | 사용승인 ────────────────────────────────────
+  {id:'s10',party:'양도인',category:'사용승인',item:'사용승인 취득',draftDate:'',confirmedDate:'2026-08-30',cat:'TP',status:'진행전',members:['이광호 프로'],
+   prereq:'준공 시',
+   todos:['사용승인 신청','현장 검사 대응','승인서 수령']},
+  // ── 양도인 | 취득세 ──────────────────────────────────────
+  {id:'s11',party:'양도인',category:'취득세납부',item:'취득세 납부',draftDate:'',confirmedDate:'2026-08-30',cat:'DD',status:'진행전',members:['오정희 프로'],
+   prereq:'사용승인 후',
+   todos:['취득세 산정','납부서 발급','납부 완료']},
+  // ── 양도인 | 보존등기 ────────────────────────────────────
+  {id:'s12',party:'양도인',category:'보존등기',item:'보존등기',draftDate:'',confirmedDate:'2026-08-30',cat:'TP',status:'진행전',members:['이광호 프로'],
+   prereq:'사용승인 완료 후 즉시',
+   todos:['등기 서류 준비','등기소 신청','등기 완료']},
+  // ── 양도인 | 임대사업자 부기등기 ─────────────────────────
+  {id:'s13',party:'양도인',category:'임대사업자 부기등기',item:'임대사업자 부기등기',draftDate:'',confirmedDate:'2026-09-01',cat:'TP',status:'진행전',members:['이광호 프로'],
+   prereq:'보존등기 완료 후',
+   todos:['부기등기 신청서 준비','등기소 신청']},
+  // ── IGISX | 내부심사 ─────────────────────────────────────
+  {id:'s14',party:'IGISX',category:'내부심사',item:'투자심의',draftDate:'',confirmedDate:'2026-07-30',cat:'IC',status:'진행전',members:['박기범 팀장님'],
+   prereq:'3차 IC LOC 이후',
+   todos:['투심 자료 작성','투심 일정 조율','투심 승인']},
+  {id:'s15',party:'IGISX',category:'내부심사',item:'M&G 상위펀드(회사형) 설정',draftDate:'2026-07-21',confirmedDate:'2026-08-21',cat:'IC',status:'진행전',members:['오정희 프로'],
+   prereq:'투자심의 완료 후',
+   todos:['펀드 설정 서류 준비','금융위 신고','설정 완료']},
+  {id:'s16',party:'IGISX',category:'내부심사',item:'IGISX REF(신탁형) 설정',draftDate:'2026-07-21',confirmedDate:'2026-08-28',cat:'IC',status:'진행전',members:['오정희 프로'],
+   prereq:'투자심의 완료 후',
+   todos:['신탁형 펀드 설정 서류','신탁계약 체결','설정 완료']},
+  // ── IGISX | 대출 ─────────────────────────────────────────
+  {id:'s17',party:'IGISX',category:'대출',item:'대출 투자심의',draftDate:'',confirmedDate:'2026-07-07',cat:'IC',status:'진행전',members:['박기범 팀장님'],
+   prereq:'3차 IC LOC 이후',
+   todos:['대출 투심 자료 준비','대주단 협의','투심 승인']},
+  {id:'s18',party:'IGISX',category:'대출',item:'대출 투자승인',draftDate:'',confirmedDate:'2026-08-06',cat:'IC',status:'진행전',members:['박기범 팀장님'],
+   prereq:'대출 투자심의 완료',
+   todos:['투자승인 서류 준비','대주단 최종 확인']},
+  {id:'s19',party:'IGISX',category:'대출',item:'대출약정',draftDate:'',confirmedDate:'2026-08-21',cat:'IC',status:'진행전',members:['박기범 팀장님'],
+   prereq:'투자승인 완료',
+   todos:['대출약정서 협상','서명 및 날인']},
+  {id:'s20',party:'IGISX',category:'대출',item:'계좌개설',draftDate:'',confirmedDate:'2026-08-26',cat:'IC',status:'진행전',members:['오정희 프로'],
+   prereq:'대출약정 후',
+   todos:['SPC 계좌 개설 신청','계좌 활성화 확인']},
+  {id:'s21',party:'IGISX',category:'대출',item:'대출실행통지',draftDate:'',confirmedDate:'2026-08-29',cat:'IC',status:'진행전',members:['박기범 팀장님'],
+   prereq:'계좌개설 완료',
+   todos:['대주단에 실행 통지 발송']},
+  {id:'s22',party:'IGISX',category:'대출',item:'대출실행 (준공/클로징 동시)',draftDate:'',confirmedDate:'2026-08-30',cat:'IC',status:'진행전',members:['박기범 팀장님'],
+   prereq:'준공/클로징 당일 동시 처리',
+   todos:['자금 이체 확인','실행 완료 확인']},
+  // ── IGISX | 실사 ─────────────────────────────────────────
+  {id:'s23',party:'IGISX',category:'실사',item:'법률실사 (1st Draft)',draftDate:'2026-04-24',confirmedDate:'2026-05-15',cat:'DD',status:'진행전',members:['김준형 프로'],
+   prereq:'1차 IC LOI 발송 후 즉시 착수',
+   todos:['DD 착수 미팅','자료 목록 전달','1st Draft 수령']},
+  {id:'s24',party:'IGISX',category:'실사',item:'법률실사 (Final Report)',draftDate:'2026-05-15',confirmedDate:'2026-06-30',cat:'DD',status:'진행전',members:['김준형 프로'],
+   prereq:'1st Draft 검토 후',
+   todos:['Draft 검토 및 의견 전달','Final Report 수령','결과 종합']},
+  {id:'s25',party:'IGISX',category:'실사',item:'재무실사 (1st Draft)',draftDate:'2026-04-24',confirmedDate:'2026-05-15',cat:'DD',status:'진행전',members:['김준형 프로'],
+   prereq:'1차 IC LOI 발송 후 즉시 착수',
+   todos:['재무 자료 요청','재무모델 작성','1st Draft 수령']},
+  {id:'s26',party:'IGISX',category:'실사',item:'재무실사 (Final Report)',draftDate:'2026-05-15',confirmedDate:'2026-06-30',cat:'DD',status:'진행전',members:['김준형 프로'],
+   prereq:'1st Draft 검토 후',
+   todos:['Draft 검토','최종 재무모델 확정','Final Report 수령']},
+  {id:'s27',party:'IGISX',category:'실사',item:'세무실사 Tax DD (1st Draft)',draftDate:'2026-04-24',confirmedDate:'2026-05-15',cat:'DD',status:'진행전',members:['오정희 프로'],
+   prereq:'1차 IC LOI 발송 후 즉시 착수',
+   todos:['취득세/법인세/종부세 검토','1st Draft 수령']},
+  {id:'s28',party:'IGISX',category:'실사',item:'세무실사 Tax DD (Final Report)',draftDate:'2026-05-15',confirmedDate:'2026-06-30',cat:'DD',status:'진행전',members:['오정희 프로'],
+   prereq:'1st Draft 검토 후',
+   todos:['세무 이슈 해소','Final Report 수령']},
+  {id:'s29',party:'IGISX',category:'실사',item:'물리실사 (1st Draft)',draftDate:'2026-04-24',confirmedDate:'2026-05-15',cat:'DD',status:'진행전',members:['오정희 프로'],
+   prereq:'1차 IC LOI 후 착수',
+   todos:['현장 실사 일정 조율','1st Draft 수령']},
+  {id:'s30',party:'IGISX',category:'실사',item:'물리실사 (Final Report)',draftDate:'2026-05-15',confirmedDate:'2026-06-30',cat:'DD',status:'진행전',members:['오정희 프로'],
+   prereq:'1st Draft 검토 후',
+   todos:['이슈 확인','Final Report 수령']},
+  {id:'s31',party:'IGISX',category:'실사',item:'시장실사 (1st Draft)',draftDate:'2026-04-24',confirmedDate:'2026-05-15',cat:'DD',status:'진행전',members:['오정희 프로'],
+   prereq:'1차 IC LOI 후 착수',
+   todos:['시장 데이터 수집','1st Draft 수령']},
+  {id:'s32',party:'IGISX',category:'실사',item:'시장실사 (Final Report)',draftDate:'2026-05-15',confirmedDate:'2026-06-30',cat:'DD',status:'진행전',members:['오정희 프로'],
+   prereq:'1st Draft 검토 후',
+   todos:['시장 분석 보완','Final Report 수령']},
+  {id:'s33',party:'IGISX',category:'실사',item:'ESG 실사 (1st Draft)',draftDate:'2026-04-24',confirmedDate:'2026-05-15',cat:'DD',status:'진행전',members:['오정희 프로'],
+   prereq:'1차 IC LOI 후 착수',
+   todos:['ESG 항목 점검','1st Draft 수령']},
+  {id:'s34',party:'IGISX',category:'실사',item:'ESG 실사 (Final Report)',draftDate:'2026-05-15',confirmedDate:'2026-06-30',cat:'DD',status:'진행전',members:['오정희 프로'],
+   prereq:'1st Draft 검토 후',
+   todos:['이슈 해소','Final Report 수령']},
+  {id:'s35',party:'IGISX',category:'실사',item:'Insurance Valuation (1st Draft)',draftDate:'2026-04-24',confirmedDate:'2026-05-15',cat:'DD',status:'진행전',members:['오정희 프로'],
+   prereq:'1차 IC LOI 후 착수',
+   todos:['보험 평가 기관 선정','1st Draft 수령']},
+  {id:'s36',party:'IGISX',category:'실사',item:'Insurance Valuation (Final Report)',draftDate:'2026-05-15',confirmedDate:'2026-06-30',cat:'DD',status:'진행전',members:['오정희 프로'],
+   prereq:'1st Draft 검토 후',
+   todos:['보험가액 최종 확정','Final Report 수령']},
+  {id:'s37',party:'IGISX',category:'실사',item:'Acquisition Valuation (1st Draft)',draftDate:'2026-04-24',confirmedDate:'2026-05-15',cat:'DD',status:'진행전',members:['오정희 프로'],
+   prereq:'1차 IC LOI 후 착수',
+   todos:['평가 기관 선정','1st Draft 수령']},
+  {id:'s38',party:'IGISX',category:'실사',item:'Acquisition Valuation (Final Report)',draftDate:'2026-05-15',confirmedDate:'2026-06-30',cat:'DD',status:'진행전',members:['오정희 프로'],
+   prereq:'1st Draft 검토 후',
+   todos:['취득가액 최종 확정','Final Report 수령']},
+  {id:'s39',party:'IGISX',category:'실사',item:'감정평가 (1st Draft)',draftDate:'2026-08-01',confirmedDate:'2026-08-15',cat:'DD',status:'진행전',members:['오정희 프로'],
+   prereq:'준공 전 착수',
+   todos:['감정평가 기관 선정','현장 방문','1st Draft 수령']},
+  {id:'s40',party:'IGISX',category:'실사',item:'감정평가 (Final Report)',draftDate:'2026-08-15',confirmedDate:'2026-08-31',cat:'DD',status:'진행전',members:['오정희 프로'],
+   prereq:'준공 후',
+   todos:['최종 감정가액 확정','Final Report 수령']},
+  // ── IGISX | 계약체결 M&G REF ─────────────────────────────
+  {id:'s41',party:'IGISX',category:'계약체결(M&G REF)',item:'자산관리/신탁/판매계약 (M&G REF)',draftDate:'2026-07-21',confirmedDate:'2026-08-21',cat:'IC',status:'진행전',members:['오정희 프로'],
+   prereq:'투자심의 완료 후',
+   todos:['계약서 초안 작성','협상','서명']},
+  {id:'s42',party:'IGISX',category:'계약체결(M&G REF)',item:'핵심투자설명서/사무수탁 (M&G REF)',draftDate:'2026-07-21',confirmedDate:'2026-08-21',cat:'IC',status:'진행전',members:['오정희 프로'],
+   prereq:'',
+   todos:['핵심투자설명서 작성','사무수탁 계약 체결']},
+  {id:'s43',party:'IGISX',category:'계약체결(M&G REF)',item:'정관 작성 및 설립등기 (M&G REF)',draftDate:'2026-07-01',confirmedDate:'2026-08-21',cat:'IC',status:'진행전',members:['김준형 프로'],
+   prereq:'',
+   todos:['정관 작성','설립등기 신청','등기 완료']},
+  // ── IGISX | 계약체결 IGISX REF ───────────────────────────
+  {id:'s44',party:'IGISX',category:'계약체결(IGISX REF)',item:'자산관리/신탁/판매/핵심설명서/사무수탁 (IGISX REF)',draftDate:'2026-07-21',confirmedDate:'2026-08-21',cat:'IC',status:'진행전',members:['오정희 프로'],
+   prereq:'투자심의 완료 후',
+   todos:['계약서 초안','협상','서명']},
+  {id:'s45',party:'IGISX',category:'계약체결(IGISX REF)',item:'PM 계약',draftDate:'2026-08-02',confirmedDate:'2026-09-01',cat:'IC',status:'진행전',members:['박기범 팀장님'],
+   prereq:'클로징 후',
+   todos:['PM 업체 선정','계약서 협상','서명']},
+  {id:'s46',party:'IGISX',category:'계약체결(IGISX REF)',item:'FM 계약',draftDate:'2026-08-02',confirmedDate:'2026-09-01',cat:'IC',status:'진행전',members:['박기범 팀장님'],
+   prereq:'클로징 후',
+   todos:['FM 업체 선정','계약서 협상','서명']},
+  // ── IGISX | 준공/Closing ─────────────────────────────────
+  {id:'s47',party:'IGISX',category:'준공/Closing',item:'펀드 약관 작성 (Hold Co/Prop Co)',draftDate:'2026-07-01',confirmedDate:'2026-08-30',cat:'IC',status:'진행전',members:['오정희 프로','김준형 프로'],
+   prereq:'3차 IC LOC 이후',
+   todos:['Hold Co 약관 작성','Prop Co 약관 작성','금융위 심사']},
+  {id:'s48',party:'IGISX',category:'준공/Closing',item:'SPC 이사회/주총 - Legal Confirm (등기)',draftDate:'',confirmedDate:'2026-08-30',cat:'TP',status:'진행전',members:['김준형 프로'],
+   prereq:'준공 전',
+   todos:['거래 관련 결의','투목 변경 결의','등기 신청']},
+  {id:'s49',party:'IGISX',category:'준공/Closing',item:'근저당 설정',draftDate:'',confirmedDate:'2026-08-30',cat:'TP',status:'진행전',members:['이광호 프로','박기범 팀장님'],
+   prereq:'보존등기 완료 직후',
+   todos:['근저당 설정 서류 준비','등기소 신청','완료 확인']},
+  {id:'s50',party:'IGISX',category:'준공/Closing',item:'투목 등기 (클로징 동시 처리)',draftDate:'',confirmedDate:'2026-08-30',cat:'TP',status:'진행전',members:['김준형 프로','이광호 프로'],
+   prereq:'모든 사전 절차 완료 후 클로징 당일',
+   todos:['등기 서류 사전 준비','클로징 당일 동시 신청']},
+  // ── IGISX | Closing 후 ───────────────────────────────────
+  {id:'s51',party:'IGISX',category:'Closing 후',item:'임원변경등기',draftDate:'',confirmedDate:'2026-09-05',cat:'TP',status:'진행전',members:['김준형 프로'],
+   prereq:'SPA 종결 후',
+   todos:['임원변경 등기 신청','완료 확인']},
+  {id:'s52',party:'IGISX',category:'Closing 후',item:'사업자등록증 갱신',draftDate:'',confirmedDate:'2026-09-05',cat:'TP',status:'진행전',members:['이광호 프로'],
+   prereq:'SPA 종결 후',
+   todos:['사업자등록 변경 신청']},
+  {id:'s53',party:'IGISX',category:'Closing 후',item:'임대사업자 대표자 변경',draftDate:'',confirmedDate:'2026-09-05',cat:'TP',status:'진행전',members:['이광호 프로'],
+   prereq:'SPA 종결 후',
+   todos:['임대사업자 대표자 변경 신청']},
+  {id:'s54',party:'IGISX',category:'Closing 후',item:'금융감독원 보고',draftDate:'',confirmedDate:'2026-09-05',cat:'IC',status:'진행전',members:['오정희 프로'],
+   prereq:'SPA 종결 후',
+   todos:['금감원 보고 서류 작성','제출']},
+  // ── M&G | 투자심의 ────────────────────────────────────────
+  {id:'s55',party:'M&G',category:'투자심의',item:'1차 투자심의 (1차 LOI 기준)',draftDate:'',confirmedDate:'2026-04-30',cat:'IC',status:'진행전',members:['박기범 팀장님'],
+   prereq:'1차 IC LOI 발송 후',
+   todos:['투심 자료 전달','M&G 내부 심의 지원']},
+  {id:'s56',party:'M&G',category:'투자심의',item:'2차 투자심의 COMMITMENT',draftDate:'',confirmedDate:'2026-05-22',cat:'IC',status:'진행전',members:['박기범 팀장님'],
+   prereq:'TIC/FINANCING 조건 확정, Operator 방안, DD 결과',
+   todos:['2차 투심 자료 준비','M&G 심의 지원','COMMITMENT 확인']},
+  {id:'s57',party:'M&G',category:'투자심의',item:'3차 투자심의 LOC',draftDate:'',confirmedDate:'2026-06-30',cat:'IC',status:'진행전',members:['박기범 팀장님'],
+   prereq:'대주 IC 완료',
+   todos:['3차 투심 자료 준비','LOC 수령']},
+  {id:'s58',party:'M&G',category:'투자심의',item:'Capital Call',draftDate:'',confirmedDate:'2026-08-31',cat:'IC',status:'진행전',members:['박기범 팀장님','오정희 프로'],
+   prereq:'준공/클로징 당일',
+   todos:['Capital Call 통지','자금 수령 확인']},
+];
+let SCHEDULE_DATA=null;  // Firebase에서 로드, null이면 DEFAULT_SCHEDULE 사용
+
+// Wiki 초기 데이터 전역 선언
+const wikiObj={
+  'DD':{sections:{
+    0:{id:0,title:'법률실사',
+      summary:'[현재 상황]\n법률실사 킥오프 완료, 실사목록 수령 후 최소화 협의 진행 중\n\n[확정된 사항]\n- 재무관련 항목(재무실적/손익/재무상태표/순차입금/우발부채)은 법률실사 범위 外 → 재무실사 이관\n- SPA 양수도금액 적정성/채권채무 검토도 재무실사 영역\n- 법률실사 자료목록 김앤장에서 2026.04.02 송부 완료\n\n[미결 사항]\n- 기업결합신고 필요여부 (상위 REF 회사형 설립 시) — 답변 대기 중\n- MOU 기간연장 방식 결정 (공문 / 변경계약 / 별도합의서) — 의견 요청 중\n- 법률실사 목록 최소화 협의 진행 중\n\n[주의사항]\n- 법인+개인 실사이나 사실상 개인 실사로 접근 필요\n- 양도인측 자료협조 여부가 전체 일정의 핵심 변수',
+      docs:[{text:'법률실사 자료목록 수령 (김앤장 2026.04.02 송부)',done:true},{text:'최소화된 실사 목록 양도인에 전달',done:false},{text:'기업결합신고 필요여부 — 김앤장 답변 수령',done:false},{text:'MOU 연장방식 — 김앤장 의견 수령',done:false},{text:'매도인 개인 실사 시점 협의 (SPA 전/후)',done:false},{text:'양도인 KYC 서류 수령 (덴스톤 통해 진행)',done:false},{text:'SPA 초안 작성 및 검토',done:false},{text:'건설중 자산 해당없는 실사항목 삭제 처리',done:false}],
+      mails:[{date:'2026-04-21',subject:'[신촌 더시우] 법률실사 확인 요청',content:'김앤장 유선 회신:\n1. 재무항목(재무실적/손익/재무상태표/순차입금/우발부채) → 법률실사 범위 外, 재무실사 이관\n4. 분할계획서 → 양대표에 요청 완료, 작성 중\n\n김준형 프로 2026.04.21 질의:\n- 기업결합신고 필요여부 (상위REF 회사형 설립 시)\n- MOU 기간연장 방식 (공문/변경계약/별도합의서)\n- 인적분할 절차 (분할계획서/채권자보호/분할등기 소요시간)'}],
+      notes:'',status:'진행중',updatedAt:'2026-04-21'},
+    1:{id:1,title:'재무실사',
+      summary:'[현재 상황]\n법률실사에서 이관된 항목 포함, 재무실사 업무범위 협의 필요\n\n[법률실사에서 이관된 항목]\n- 한성하이플러스 과거 재무실적 및 손익구조 분석\n- 재무상태표 및 계정잔액 분석\n- 순차입금 및 정상 운전자본 분석\n- 우발부채 및 충당부채 검토\n- SPA 양수도금액 적정성 검토\n- 채권채무 고려한 양도인 최종 지급금액 검토\n\n[미결 사항]\n- 재무실사 기관 선정 및 업무범위 확정 (KPMG 검토 중)\n- 재무모델 완성 필요\n\n[주의사항]\n- 간주취득세, 법인세 소득공제 신청, 종부세 합산배제 등 tax 항목 포함 필요',
+      docs:[{text:'재무실사 기관 선정 (KPMG 등)',done:false},{text:'업무범위 확정 및 계약 체결',done:false},{text:'재무실적/손익구조 분석',done:false},{text:'재무상태표 및 계정잔액 분석',done:false},{text:'순차입금 및 운전자본 분석',done:false},{text:'우발부채/충당부채 검토',done:false},{text:'SPA 양수도금액 적정성 검토',done:false},{text:'재무모델 완성',done:false},{text:'투목전환 후 배당가능이익 산정 확인',done:false}],
+      mails:[],notes:'법률실사에서 이관된 항목 포함하여 업무범위 확정 필요',status:'검토중',updatedAt:'2026-04-21'}
+  }},
+  'TP':{sections:{
+    0:{id:0,title:'투목전환·분할',
+      summary:'[현재 상황]\n투목전환 절차 김앤장과 지속 협의 중. 분할계획서 양대표에 요청, 작성 중\n\n[확정된 사항]\n- 인적분할 방식 적합 (시설관리업 분리)\n- 분할계획서 양대표에 요청 완료, 작성 중\n- 투목전환 절차: 주총 → 사업목적변경 정관개정 → 자본금항목 삭제 등기\n- 자본시장법 249조13: 상근임원/직원 미고용, 본점 외 영업소 불가\n\n[미결 사항]\n- 분할계획서 수령 및 검토\n- 단독사모이슈 해소방안 확정 (JV 구조 검토 중)\n- 건설형임대사업자 등록 방식 결정\n\n[주의사항]\n- 임대사업자 등록 순서 엄수: 등록→신탁해지→건축주명의변경→사용승인→보존등기\n- 위탁자 명의로 등록 후 자진말소 시 재등록 불가 — 대출실행 반드시 선행',
+      docs:[{text:'분할계획서 양대표로부터 수령',done:false},{text:'인적분할 채권자보호절차 진행',done:false},{text:'분할등기 신청',done:false},{text:'단독사모이슈 해소방안 확정',done:false},{text:'건설형임대사업자 등록 (위탁자 명의)',done:false},{text:'신탁해지',done:false},{text:'건축주 명의변경',done:false},{text:'사용승인 취득 (위탁자 명의)',done:false},{text:'보존등기 (위탁자 명의)',done:false},{text:'상근임원/직원/지점 폐지 절차 완료',done:false}],
+      mails:[{date:'2026-04-21',subject:'투목전환 진행현황',content:'분할계획서: 양대표에 요청 완료, 작성 중\n인적분할 방식 적합으로 확인\n분할 후 한성하이플러스 자회사 → 집합투자기구 주식취득 후 투목전환 가능'}],
+      notes:'',status:'진행중',updatedAt:'2026-04-21'}
+  }},
+  'IC':{sections:{
+    0:{id:0,title:'MOU 연장',
+      summary:'[현재 상황]\nMOU 기간연장 방식 검토 중. 투자의향서 제출 시 5월 말까지 연장 예정\n\n[미결 사항]\n- 연장방식 결정: 공문 / 변경계약 / 양해각서에 부수되는 별도 합의서\n- 6월까지 추가 연장 가능성도 고려 필요\n\n[주의사항]\n- SPA 체결까지 소요시간 고려 시 MOU 기간연장 필수\n- 김앤장 내부 검토 의견 수령 후 방식 확정',
+      docs:[{text:'김앤장 MOU 연장방식 의견 수령',done:false},{text:'연장방식 최종 결정 (공문/변경계약/별도합의서)',done:false},{text:'MOU 연장 공문 또는 계약서 작성',done:false},{text:'당사자 서명 및 집행',done:false}],
+      mails:[],notes:'',status:'검토중',updatedAt:'2026-04-21'},
+    1:{id:1,title:'기업결합신고',
+      summary:'[현재 상황]\n상위 REF를 회사형으로 설립하는 경우 기업결합신고 필요여부 검토 중\n\n[미결 사항]\n- 김앤장 검토 의견 대기 중\n- 필요 시 신고 절차 및 소요시간 확인 필요\n\n[주의사항]\n- 기업결합신고 필요 시 딜 일정에 영향',
+      docs:[{text:'기업결합신고 필요여부 — 김앤장 답변 수령',done:false},{text:'필요 시 기업결합신고 서류 준비',done:false},{text:'공정위 신고 및 승인 (필요시)',done:false}],
+      mails:[],notes:'',status:'검토중',updatedAt:'2026-04-21'}
+  }}
+};
+let editingMsId=null,editingPhase=null,editingPhaseIdx=null;
+let state={view:'dashboard',member:null,cat:null,period:'today',wikiCat:null,wikiSection:null};
+const MC={'박기범 팀장님':'#4da6ff','김준형 프로':'#4ecb71','이광호 프로':'#ffb347','오정희 프로':'#ff6b6b'};
+const MI={'박기범 팀장님':'박','김준형 프로':'김','이광호 프로':'이','오정희 프로':'오'};
+
+// ─── FIREBASE CONFIG ───
+const FIREBASE_CONFIG={
+  apiKey:"AIzaSyCkNOXm15kDwDu0PjLsklnMBDVU5FSpz_s",
+  authDomain:"igis-project-tracker.firebaseapp.com",
+  databaseURL:"https://igis-project-tracker-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:"igis-project-tracker",
+  storageBucket:"igis-project-tracker.firebasestorage.app",
+  messagingSenderId:"313523363408",
+  appId:"1:313523363408:web:b29a6d96e0c450a186fb55"
+};
+function resetConfig(){location.reload();}
+// 이번주 Daily To Do List
+const WEEKLY_TASKS=[
+  // ── 4/22(수) 내일 ─────────────────────────────
+  {id:200,name:'M&G 2차 IC 주요내용 파악 및 정리 → 1차 IC LOI 작성 기반',member:['김준형 프로'],cat:'IC',due:'2026-04-22',priority:'긴급',status:'Not started'},
+  {id:201,name:'법률실사 Coverage 범위 최종 확정 (재무항목 이관 포함)',member:['김준형 프로'],cat:'DD',due:'2026-04-22',priority:'긴급',status:'Not started'},
+  {id:202,name:'재무실사 Coverage 범위 확정 (KPMG 커버 여부 포함)',member:['김준형 프로'],cat:'DD',due:'2026-04-22',priority:'긴급',status:'Not started'},
+  {id:203,name:'DD 착수 세팅 — 양도인 직결 DD 착수',member:['김준형 프로'],cat:'DD',due:'2026-04-22',priority:'보통',status:'Not started'},
+  {id:204,name:'기존 신탁사 확인 — 임대사업자 범위 / 신탁 해지 조건 질의',member:['김준형 프로'],cat:'DD',due:'2026-04-22',priority:'보통',status:'Not started'},
+  {id:205,name:'기업결합신고 요건 해당 여부 검토 착수',member:['김준형 프로'],cat:'IC',due:'2026-04-22',priority:'보통',status:'Not started'},
+  {id:206,name:'딜 구조 완전 숙지 (Tax 업무 지시 대응 수준)',member:['이광호 프로'],cat:'IC',due:'2026-04-22',priority:'보통',status:'Not started'},
+  {id:207,name:'건설형 임대등록 관련 서류 준비 착수 (위탁자 명의 가능 여부)',member:['이광호 프로'],cat:'TP',due:'2026-04-22',priority:'보통',status:'Not started'},
+  {id:208,name:'Tax DD 착수 세팅 (취득세 / 법인세 / 종부세 범위 확인)',member:['이광호 프로'],cat:'DD',due:'2026-04-22',priority:'보통',status:'Not started'},
+  {id:209,name:'1차 IC LOI 초안 작성 착수 (M&G 2차 IC 내용 반영)',member:['오정희 프로'],cat:'IC',due:'2026-04-22',priority:'긴급',status:'Not started'},
+  {id:210,name:'리걸 DD 카테고리 구성 (매도인/대상회사/계약/인사노무/부동산/세금/기타)',member:['오정희 프로'],cat:'DD',due:'2026-04-22',priority:'보통',status:'Not started'},
+  {id:211,name:'김앤장 Fee 협의 및 확정',member:['박기범 팀장님'],cat:'IC',due:'2026-04-22',priority:'긴급',status:'Not started'},
+  {id:212,name:'대주 IC 선행사항 확인 (Equity Commit 등)',member:['박기범 팀장님'],cat:'IC',due:'2026-04-22',priority:'긴급',status:'Not started'},
+  {id:213,name:'KPMG 재무실사 커버리지 방향 결정',member:['박기범 팀장님'],cat:'DD',due:'2026-04-22',priority:'보통',status:'Not started'},
+  {id:214,name:'KYC 별도 변호사 선임 — 메일 공유 (대장)',member:['박기범 팀장님'],cat:'DD',due:'2026-04-22',priority:'긴급',status:'Not started'},
+  {id:215,name:'MOU 기간 연장 방식 — 김앤장 내부 검토 요청',member:['박기범 팀장님'],cat:'IC',due:'2026-04-22',priority:'긴급',status:'Not started'},
+  // ── 4/23(목) ──────────────────────────────────
+  {id:220,name:'최소화된 법률실사 목록 정리 → 양도인 전달',member:['김준형 프로'],cat:'DD',due:'2026-04-23',priority:'긴급',status:'Not started'},
+  {id:221,name:'기업결합신고 필요여부 — 김앤장 질의 발송',member:['김준형 프로'],cat:'IC',due:'2026-04-23',priority:'보통',status:'Not started'},
+  {id:222,name:'인적분할 절차 소요시간 확인 (채권자보호 / 분할등기)',member:['김준형 프로'],cat:'TP',due:'2026-04-23',priority:'보통',status:'Not started'},
+  {id:223,name:'임대사업자 등록 순서 확정 (등록→신탁해지→건축주변경→사용승인→보존등기)',member:['이광호 프로'],cat:'TP',due:'2026-04-23',priority:'보통',status:'Not started'},
+  {id:224,name:'Tax DD 기관 선정 검토 (취득세 / 종부세 합산배제 포함)',member:['이광호 프로'],cat:'DD',due:'2026-04-23',priority:'보통',status:'Not started'},
+  {id:225,name:'IM 초안 작성 착수',member:['오정희 프로'],cat:'IC',due:'2026-04-23',priority:'보통',status:'Not started'},
+  {id:226,name:'SPC 정관 작성 + AMC/사무수탁 부수계약 동시 작성',member:['오정희 프로'],cat:'DD',due:'2026-04-23',priority:'보통',status:'Not started'},
+  {id:227,name:'MOU 연장방식 최종 결정 (김앤장 답변 수령 후)',member:['박기범 팀장님'],cat:'IC',due:'2026-04-23',priority:'긴급',status:'Not started'},
+  {id:228,name:'신규 대주 담보 설정 방식 결정',member:['박기범 팀장님'],cat:'IC',due:'2026-04-23',priority:'보통',status:'Not started'},
+  {id:229,name:'SPC 분할 여부 최종 결정',member:['박기범 팀장님'],cat:'IC',due:'2026-04-23',priority:'보통',status:'Not started'},
+  // ── 4/24(금) ──────────────────────────────────
+  {id:230,name:'법률실사 자료 요청 — 양도인 발송',member:['김준형 프로'],cat:'DD',due:'2026-04-24',priority:'긴급',status:'Not started'},
+  {id:231,name:'분할계획서 수령 여부 확인 — 양대표 follow-up',member:['김준형 프로'],cat:'TP',due:'2026-04-24',priority:'보통',status:'Not started'},
+  {id:232,name:'MOU 연장 실행 준비 (공문 or 계약서 초안)',member:['김준형 프로'],cat:'IC',due:'2026-04-24',priority:'긴급',status:'Not started'},
+  {id:233,name:'단독사모이슈 해소방안 정리 (JV 구조 검토)',member:['이광호 프로'],cat:'TP',due:'2026-04-24',priority:'보통',status:'Not started'},
+  {id:234,name:'Tax DD 업무범위 초안 작성',member:['이광호 프로'],cat:'DD',due:'2026-04-24',priority:'보통',status:'Not started'},
+  {id:235,name:'1차 IC LOI 초안 완성 → 준형프로 검토',member:['오정희 프로'],cat:'IC',due:'2026-04-24',priority:'긴급',status:'Not started'},
+  {id:236,name:'리걸 DD 카테고리 구성 완료',member:['오정희 프로'],cat:'DD',due:'2026-04-24',priority:'보통',status:'Not started'},
+  {id:237,name:'대주 IC 협의 내용 정리 — 1차 IC LOI 준비용',member:['박기범 팀장님'],cat:'IC',due:'2026-04-24',priority:'긴급',status:'Not started'},
+  {id:238,name:'양정례 KYC 착수 현황 확인',member:['박기범 팀장님'],cat:'DD',due:'2026-04-24',priority:'보통',status:'Not started'},
+  // ── 4/25(금) ★ 1차 IC LOI 목표일 ───────────────
+  {id:240,name:'★ 1차 IC LOI 최종 완성 및 발송',member:['김준형 프로','오정희 프로'],cat:'IC',due:'2026-04-25',priority:'긴급',status:'Not started'},
+  {id:241,name:'DD Coverage 최종 확정본 팀 공유 (법률+재무 역할분담)',member:['김준형 프로'],cat:'DD',due:'2026-04-25',priority:'긴급',status:'Not started'},
+  {id:242,name:'기업결합신고 김앤장 답변 수령 확인',member:['김준형 프로'],cat:'IC',due:'2026-04-25',priority:'보통',status:'Not started'},
+  {id:243,name:'단독사모이슈 해소방안 팀장님 보고',member:['이광호 프로'],cat:'TP',due:'2026-04-25',priority:'보통',status:'Not started'},
+  {id:244,name:'Tax DD 착수 준비 완료 — 팀장님 보고',member:['이광호 프로'],cat:'DD',due:'2026-04-25',priority:'보통',status:'Not started'},
+  {id:245,name:'IM 초안 1차 버전 완성',member:['오정희 프로'],cat:'IC',due:'2026-04-25',priority:'보통',status:'Not started'},
+  {id:246,name:'★ 1차 IC LOI 최종 검토 및 결재',member:['박기범 팀장님'],cat:'IC',due:'2026-04-25',priority:'긴급',status:'Not started'},
+  {id:247,name:'기업결합신고 필요여부 최종 판단 후 방향 결정',member:['박기범 팀장님'],cat:'IC',due:'2026-04-25',priority:'보통',status:'Not started'},
+  {id:248,name:'★ MOU 연장 실행 최종 확인 (4/28 데드라인 대비)',member:['박기범 팀장님'],cat:'IC',due:'2026-04-25',priority:'긴급',status:'Not started'},
+]
+
+function forceUploadWeeklyTasks(){
+  if(!db){alert('Firebase가 연결되지 않았어요');return;}
+  if(!confirm('이번주 Daily To Do List를 Firebase에 추가할까요?\n(기존 태스크는 그대로 유지됩니다)')) return;
+  Promise.all(WEEKLY_TASKS.map(t=>db.ref('tasks/'+t.id).set(t)))
+    .then(()=>{
+      db.ref('nextTaskId').set(300);
+      alert('이번주 태스크 '+WEEKLY_TASKS.length+'개 추가 완료! 새로고침합니다.');
+      location.reload();
+    }).catch(e=>alert('오류: '+e.message));
+}
+function forceUploadSchedule(){
+  if(!db){alert('Firebase가 연결되지 않았어요');return;}
+  if(!confirm('프로젝트 일정표를 최신 데이터로 초기화할까요?')) return;
+  var schedObj={};
+  DEFAULT_SCHEDULE.forEach(function(s){schedObj[s.id]=s;});
+  db.ref('schedule').set(schedObj).then(function(){
+    alert('일정표 초기화 완료! 새로고침합니다.');
+    location.reload();
+  }).catch(function(e){alert('오류: '+e.message);});
+}
+function forceResetAllTasks(){
+  if(!db){alert('Firebase가 연결되지 않았어요');return;}
+  if(!confirm('모든 태스크를 프로젝트 일정표 기반 55개로 초기화할까요?')) return;
+  db.ref('tasks').remove().then(function(){
+    var obj={};DEFAULT_TASKS.forEach(function(t){obj[t.id]=t;});return db.ref('tasks').set(obj);
+  }).then(function(){return db.ref('nextTaskId').set(84);
+  }).then(function(){alert('초기화 완료!');location.reload();
+  }).catch(function(e){alert('오류: '+e.message);});
+}
+function forceUploadWiki(){
+  if(!db){alert('Firebase가 연결되지 않았어요');return;}
+  if(!confirm('Wiki 초기 데이터를 Firebase에 업로드할까요?')) return;
+  const uploads=[];
+  Object.entries(wikiObj).forEach(([catName,catData])=>{
+    Object.entries(catData.sections||{}).forEach(([secId,sec])=>{
+      uploads.push(db.ref('wiki/'+catName+'/sections/'+secId).set(sec));
+    });
+  });
+  Promise.all(uploads).then(()=>{
+    alert('완료! 페이지를 새로고침합니다.');
+    location.reload();
+  }).catch(e=>alert('오류: '+e.message));
+}
+
+// ─── FIREBASE INIT ───
+function initFirebase(cfg){
+  try{
+    const app=firebase.initializeApp(cfg);
+    db=firebase.database();
+    db.ref('.info/connected').on('value', snap=>{
+      if(snap.val()===false) setSyncStatus('offline','오프라인');
+    });
+    setSyncStatus('syncing','연결 중...');
+    // 데이터 초기화 확인
+    db.ref('initialized').once('value').then(snap=>{
+      if(!snap.val()){
+        // 최초 실행 시 기본 데이터 업로드
+        setSyncStatus('syncing','초기 데이터 업로드 중...');
+        const tasksObj={};
+        DEFAULT_TASKS.forEach(t=>{tasksObj[t.id]=t;});
+        const clObj={};
+        DEFAULT_CHECKLIST.forEach(c=>{clObj[c.id]=c;});
+        const msObj={};
+        DEFAULT_MILESTONES.forEach((m,i)=>{msObj[i]={...m,id:i};});
+        const phObj={IC:{},DD:{},TP:{}};
+        ['IC','DD','TP'].forEach(cat=>{DEFAULT_PHASE_ITEMS[cat].forEach((item,i)=>{phObj[cat][i]={id:i,text:item};});});
+        const catsObj={0:{id:0,name:'IC'},1:{id:1,name:'DD'},2:{id:2,name:'TP'}};
+        const priObj={};
+        DEFAULT_PRIORITIES.forEach((p,i)=>{priObj[i]={id:i,name:p};});
+        const schedObj={};
+        DEFAULT_SCHEDULE.forEach(s=>{schedObj[s.id]=s;});
+        db.ref().set({tasks:tasksObj,checklist:clObj,nextTaskId:100,milestones:msObj,phase:phObj,cats:catsObj,priorities:priObj,wiki:wikiObj,schedule:schedObj,initialized:true})
+          .then(()=>startListening());
+      } else {
+        // wiki가 없으면 초기 데이터 업로드 후 시작
+        db.ref('wiki').once('value').then(wikiSnap=>{
+          if(!wikiSnap.val()){
+            db.ref('wiki').set(wikiObj).then(()=>startListening()).catch(()=>startListening());
+          } else {
+            startListening();
+          }
+        }).catch(()=>startListening());
+      }
+    }).catch(err=>{
+      console.error(err);
+      setSyncStatus('offline','연결 실패');
+      document.getElementById('loading-text').textContent='연결 실패 — Firebase 설정을 확인해주세요';
+    });
+
+  }catch(e){
+    console.error(e);
+    setSyncStatus('offline','연결 실패');
+  }
+}
+
+let _listening=false;
+function startListening(){
+  if(_listening) return;
+  _listening=true;
+  // API 키 Firebase에서 로드
+  loadApiKeyFromFirebase();
+  // 업로드된 서류 불러오기
+  db.ref('documents').once('value').then(function(snap){
+    if(snap.val()){
+      uploadedDocuments={};
+      Object.values(snap.val()).forEach(function(d){uploadedDocuments[d.id]=d;});
+      render();
+    }
+  });
+  // tasks 실시간 구독
+  db.ref('tasks').on('value',snap=>{
+    const data=snap.val();
+    TASKS=data?Object.values(data):[];
+    setSyncStatus('online','실시간 연결됨');
+    hideLoading();
+    render();
+  });
+  // checklist 실시간 구독
+  db.ref('checklist').on('value',snap=>{
+    const data=snap.val();
+    CHECKLIST=data?Object.values(data):[];
+    render();
+  });
+  // nextTaskId
+  db.ref('nextTaskId').on('value',snap=>{
+    if(snap.val()) nextTaskId=snap.val();
+  });
+  // cats
+  db.ref('cats').on('value',snap=>{
+    const data=snap.val();
+    CATS=data?Object.values(data).sort((a,b)=>a.id-b.id):[];
+    render();
+  });
+  // priorities
+  db.ref('priorities').on('value',snap=>{
+    const data=snap.val();
+    PRIORITIES=data?Object.values(data).sort((a,b)=>a.id-b.id):[];
+    render();
+  });
+  // milestones
+  db.ref('milestones').on('value',snap=>{
+    const data=snap.val();
+    MILESTONES_DATA=data?Object.values(data).sort((a,b)=>a.id-b.id):[];
+    render();
+  });
+  // schedule
+  db.ref('schedule').on('value',snap=>{
+    SCHEDULE_DATA=snap.val()?Object.values(snap.val()):null;
+    render();
+  });
+  // wiki
+  db.ref('wiki').on('value',snap=>{
+    const data=snap.val();
+    WIKI_DATA=data||{};
+    render();
+  });
+  // phase items
+  db.ref('phase').on('value',snap=>{
+    const data=snap.val();
+    if(data){
+      ['IC','DD','TP'].forEach(cat=>{
+        PHASE_DATA[cat]=data[cat]?Object.values(data[cat]).sort((a,b)=>a.id-b.id):[];
+      });
+    }
+    render();
+  });
+}
+
+function hideLoading(){
+  document.getElementById('loading-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+}
+
+function setSyncStatus(status,text){
+  const dot=document.getElementById('sync-dot');
+  const txt=document.getElementById('sync-text');
+  if(!dot||!txt) return;
+  dot.className='sync-dot'+(status==='syncing'?' syncing':status==='offline'?' offline':'');
+  txt.textContent=text;
+}
+
+// ─── DB OPERATIONS ───
+function dbSetTask(task){
+  if(!db) return;
+  setSyncStatus('syncing','저장 중...');
+  db.ref('tasks/'+task.id).set(task).then(()=>setSyncStatus('online','실시간 연결됨'));
+}
+function dbDeleteTask(id){
+  if(!db) return;
+  db.ref('tasks/'+id).remove();
+}
+function dbSetCheck(item){
+  if(!db) return;
+  db.ref('checklist/'+item.id).set(item);
+}
+function dbDeleteCheck(id){
+  if(!db) return;
+  db.ref('checklist/'+id).remove();
+}
+function dbSetNextId(n){
+  if(!db) return;
+  db.ref('nextTaskId').set(n);
+}
+
+function dbSetScheduleItem(item){if(!db)return;db.ref('schedule/'+item.id).set(item);}
+function dbAddScheduleItem(item){if(!db)return;db.ref('schedule/'+item.id).set(item);}
+function dbDeleteScheduleItem(id){if(!db)return;db.ref('schedule/'+id).remove();}
+function dbSetWikiSection(catName,section){
+  if(!db)return;
+  if(!WIKI_DATA[catName]) WIKI_DATA[catName]={sections:{}};
+  db.ref('wiki/'+catName+'/sections/'+section.id).set(section);
+}
+function dbDeleteWikiSection(catName,sectionId){
+  if(!db)return;
+  db.ref('wiki/'+catName+'/sections/'+sectionId).remove();
+}
+function dbSetCat(cat){if(!db)return;db.ref('cats/'+cat.id).set(cat);}
+function dbDeleteCat(id){if(!db)return;db.ref('cats/'+id).remove();}
+function dbAddCat(name){
+  if(!db)return;
+  const newId=CATS.length>0?Math.max(...CATS.map(c=>c.id))+1:0;
+  db.ref('cats/'+newId).set({id:newId,name:name.trim()});
+}
+function dbSetPriority(p){if(!db)return;db.ref('priorities/'+p.id).set(p);}
+function dbAddPriority(name){
+  if(!db)return;
+  const newId=PRIORITIES.length>0?Math.max(...PRIORITIES.map(p=>p.id))+1:0;
+  db.ref('priorities/'+newId).set({id:newId,name:name.trim()});
+}
+function dbDeletePriority(id){if(!db)return;db.ref('priorities/'+id).remove();}
+function dbSetMilestone(ms){if(!db)return;db.ref('milestones/'+ms.id).set(ms);}
+function dbSetPhaseItem(cat,item){if(!db)return;db.ref('phase/'+cat+'/'+item.id).set(item);}
+function dbDeletePhaseItem(cat,id){if(!db)return;db.ref('phase/'+cat+'/'+id).remove();}
+function dbAddPhaseItem(cat,text){
+  if(!db)return;
+  const items=PHASE_DATA[cat]||[];
+  const newId=items.length>0?Math.max(...items.map(i=>i.id))+1:0;
+  db.ref('phase/'+cat+'/'+newId).set({id:newId,text});
+}
+function dbAddMilestone(){
+  if(!db)return;
+  const newId=MILESTONES_DATA.length>0?Math.max(...MILESTONES_DATA.map(m=>m.id))+1:0;
+  db.ref('milestones/'+newId).set({id:newId,dateStr:'',label:'새 마일스톤',detail:''});
+}
+function dbDeleteMilestone(id){if(!db)return;db.ref('milestones/'+id).remove();}
+
+// ─── RENDER ───
+function getPct(cat){const a=TASKS.filter(t=>t.cat===cat),d=a.filter(t=>t.status==='Done').length;return a.length?Math.round(d/a.length*100):0;}
+
+function renderDashboard(){
+  const total=TASKS.length,done=TASKS.filter(t=>t.status==='Done').length;
+  const urgent=TASKS.filter(t=>t.priority==='긴급'&&t.status!=='Done').length;
+  const pct=total?Math.round(done/total*100):0;
+  const members=['박기범 팀장님','김준형 프로','이광호 프로','오정희 프로'];
+
+  const todayMemberHTML=members.map(m=>{
+    const mt=TASKS.filter(t=>{const ms=Array.isArray(t.member)?t.member:[t.member];return ms.includes(m)&&t.due===TODAY;});
+    const col=MC[m],init=MI[m],short=m.replace(' 팀장님','').replace(' 프로','');
+    return `<div class="member-today-card">
+      <div class="member-today-header">
+        <div class="member-avatar" style="background:${col}22;color:${col}">${init}</div>
+        <span class="member-today-name">${short}</span>
+        <span class="member-today-count">${mt.filter(t=>t.status!=='Done').length}개</span>
+      </div>
+      ${mt.length===0
+        ?'<div style="font-size:11px;color:var(--text3);padding:4px 0">오늘 기한 없음</div>'
+        :mt.map(t=>{const cc={IC:'b-ic',DD:'b-dd',TP:'b-tp'}[t.cat];return `<div class="today-task-item"><div class="today-check${t.status==='Done'?' checked':''}" onclick="toggleTask(${t.id})"></div><span class="today-task-name${t.status==='Done'?' done':''}">${t.name}</span><span style="font-size:9px;padding:1px 5px;border-radius:99px;background:${getCatStyle(t.cat).bg};color:${getCatStyle(t.cat).color}">${t.cat}</span></div>`;}).join('')}
+    </div>`;
+  }).join('');
+
+  const msData=MILESTONES_DATA.length>0?MILESTONES_DATA:DEFAULT_MILESTONES.map((m,i)=>({...m,id:i}));
+  const msHTML=msData.map(m=>{
+    const past=isPast(m.dateStr),isToday=m.dateStr===TODAY;
+    const dotClass=isToday?'today':past?'past':'upcoming';
+    const isEd=editingMsId===m.id;
+    return `<div class="milestone-item">
+      <div class="milestone-dot ${dotClass}"></div>
+      ${isEd?`
+        <input class="ms-edit-input" type="date" value="${m.dateStr||''}" onchange="saveMsDate(${m.id},this.value)" style="font-family:'DM Mono',monospace;font-size:9px;background:var(--surface2);border:1px solid var(--accent);border-radius:3px;color:var(--text);width:76px;padding:1px 2px;outline:none;margin-bottom:2px" />
+        <input class="ms-edit-input" value="${(m.label||'').replace(/"/g,'&quot;')}" placeholder="이름" onblur="saveMsLabel(${m.id},this.value)" onkeydown="if(event.key==='Enter')this.blur()" style="font-size:10px;font-weight:500;background:var(--surface2);border:1px solid var(--accent);border-radius:3px;color:var(--text);width:76px;padding:1px 2px;outline:none;margin-bottom:2px;text-align:center" />
+        <textarea placeholder="세부내용" onblur="saveMsDetail(${m.id},this.value)" onkeydown="if(event.key==='Escape')cancelMsEdit()" style="font-size:9px;background:var(--surface2);border:1px solid var(--accent);border-radius:3px;color:var(--text);width:76px;padding:2px;outline:none;resize:none;height:48px;text-align:center">${(m.detail||'').replace(/\n/g,'&#10;')}</textarea>
+        <button onclick="deleteMilestone(${m.id})" style="font-size:9px;color:var(--urgent);background:none;border:none;cursor:pointer;margin-top:2px">삭제</button>
+      `:`
+        <div class="milestone-date" style="cursor:pointer" onclick="startMsEdit(${m.id})">${formatDate(m.dateStr)||'날짜없음'}</div>
+        <div class="milestone-day${past?' past-day':''}">${getDayLabel(m.dateStr)}</div>
+        <div class="milestone-label" style="cursor:pointer" onclick="startMsEdit(${m.id})">${m.label}</div>
+        <div class="milestone-detail" style="cursor:pointer" onclick="startMsEdit(${m.id})">${(m.detail||'').replace(/\n/g,'<br>')}</div>
+      `}
+    </div>`;
+  }).join('')+'<div class="milestone-item" style="flex:0;min-width:36px"><button onclick="dbAddMilestone()" style="background:none;border:1px dashed var(--border2);border-radius:6px;color:var(--text3);cursor:pointer;font-size:11px;padding:4px 6px;white-space:nowrap">+</button></div>';
+
+  const phaseHTML=(CATS.length>0?CATS.map(c=>c.name):['IC','DD','TP']).map(cat=>{
+    const col=getCatStyle(cat).color;
+    const catBg=getCatStyle(cat).bg,catBorder=getCatStyle(cat).border;
+    const items=PHASE_DATA[cat]&&PHASE_DATA[cat].length>0?PHASE_DATA[cat]:DEFAULT_PHASE_ITEMS[cat].map((t,i)=>({id:i,text:t}));
+    return `<div class="phase-card" style="background:${catBg};border-color:${catBorder}">
+      <div class="phase-title" style="color:${col};display:flex;justify-content:space-between;align-items:center">
+        <span>${cat} 단계 체크항목</span>
+        <button onclick="addPhaseItem('${cat}')" style="background:none;border:none;color:${col};cursor:pointer;font-size:13px;line-height:1;opacity:0.7">+</button>
+      </div>
+      ${items.map(item=>{
+        const isEd=editingPhase===cat&&editingPhaseIdx===item.id;
+        return isEd
+          ?`<div class="phase-item"><div class="phase-bullet" style="background:${col}"></div><input value="${item.text.replace(/"/g,'&quot;')}" onblur="savePhaseItem('${cat}',${item.id},this.value)" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape')cancelPhaseEdit()" style="flex:1;background:transparent;border:none;border-bottom:1px solid ${col};color:var(--text);font-size:10px;font-family:'Noto Sans KR',sans-serif;outline:none;min-width:0" /><button onclick="deletePhaseItem('${cat}',${item.id})" style="background:none;border:none;color:var(--urgent);cursor:pointer;font-size:11px;flex-shrink:0">×</button></div>`
+          :`<div class="phase-item" style="cursor:pointer" onclick="startPhaseEdit('${cat}',${item.id})"><div class="phase-bullet" style="background:${col}"></div><span style="flex:1">${item.text}</span></div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+
+  return `
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">전체 진행률</div><div class="stat-value">${pct}<span style="font-size:14px;color:var(--text3)">%</span></div><div class="stat-sub">${done} / ${total} 완료</div></div>
+      ${(CATS.length>0?CATS.slice(0,2):[{name:'IC'},{name:'DD'}]).map(cat=>{
+        const a=TASKS.filter(t=>t.cat===cat.name),d=a.filter(t=>t.status==='Done').length,p=a.length?Math.round(d/a.length*100):0;
+        const st=getCatStyle(cat.name);
+        return `<div class="stat-card"><div class="stat-label">${cat.name} 진행률</div><div class="stat-value" style="color:${st.color}">${p}<span style="font-size:14px;color:var(--text3)">%</span></div><div class="stat-sub">${d}/${a.length}</div></div>`;
+      }).join('')}
+      <div class="stat-card"><div class="stat-label">긴급 미완료</div><div class="stat-value val-urgent">${urgent}</div><div class="stat-sub">개 남음</div></div>
+    </div>
+    <div class="progress-section">
+      ${(CATS.length>0?CATS:[{name:'IC'},{name:'DD'},{name:'TP'}]).map(cat=>{
+        const a=TASKS.filter(t=>t.cat===cat.name),d=a.filter(t=>t.status==='Done').length,p=a.length?Math.round(d/a.length*100):0;
+        const st=getCatStyle(cat.name);
+        return `<div class="prog-card" onclick="showView('tasks');setCatFilter('${cat.name}')">
+          <div class="prog-header"><span class="prog-title" style="color:${st.color}">${cat.name}</span><span class="prog-pct" style="color:${st.color}">${p}%</span></div>
+          <div class="prog-track"><div class="prog-fill" style="width:${p}%;background:${st.color}"></div></div>
+          <div class="prog-nums">${d}개 완료 · ${a.length-d}개 남음</div>
+        </div>`;}).join('')}
+    </div>
+    <div class="milestone-wrap">
+      <div class="milestone-header">주요 마일스톤</div>
+      <div class="milestone-strip">${msHTML}</div>
+    </div>
+    <div class="section-header"><span class="section-title-main">오늘 할 일 — 담당자별</span><button class="add-btn" onclick="openTaskModal()">+ 추가</button></div>
+    <div class="today-grid">${todayMemberHTML}</div>
+    <div class="section-header" style="margin-top:4px"><span class="section-title-main">단계별 챙겨야 할 항목</span></div>
+    <div class="phase-grid">${phaseHTML}</div>
+  `;
+}
+
+function renderTaskNameEl(t,isDone){
+  if(editingNameId==t.id){
+    var v=t.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+    return '<input id="tni'+t.id+'" class="task-name" value="'+v+'"'
+      +' onblur="saveTaskName('+t.id+',this.value)"'
+      +' onkeydown="handleNameKey(event,'+t.id+')"'
+      +' onclick="event.stopPropagation()"'
+      +' style="background:var(--surface2);border:none;border-bottom:2px solid var(--accent);outline:none;padding:2px 4px;border-radius:0;width:100%" />';
+  }
+  var cls='task-name'+(isDone?' strikethrough':'');
+  return '<div class="'+cls+'"'
+    +' onclick="openTaskDetail('+t.id+')"'
+    +' ondblclick="startNameEdit('+t.id+',event)"'
+    +' title="클릭 상세 / 더블클릭 이름수정">'+t.name+'</div>';
+}
+function renderDetailDoneBtn(t){
+  var done=t.status==='Done';
+  return '<button onclick="toggleTask('+t.id+')" style="font-size:12px;padding:5px 14px;border-radius:7px;border:1px solid '+(done?'var(--done)':'var(--border2)')+';background:'+(done?'rgba(78,203,113,0.15)':'transparent')+';color:'+(done?'var(--done)':'var(--text2)')+';cursor:pointer">'+(done?'완료됨':'완료 처리')+'</button>';
+}
+function renderDetailNameEl(t){
+  if(detailEditingName){
+    var v=t.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+    return '<input id="detail-name-input" value="'+v+'"'
+      +' onblur="saveDetailName('+t.id+',this.value)"'
+      +' onkeydown="handleDetailNameKey(event,'+t.id+')"'
+      +' style="font-size:18px;font-weight:500;color:var(--text);background:transparent;border:none;border-bottom:2px solid var(--accent);outline:none;width:100%;margin-bottom:12px;padding:2px 0" />';
+  }
+  return '<h2 style="font-size:18px;font-weight:500;margin-bottom:12px;color:var(--text);cursor:pointer"'
+    +' onclick="startDetailNameEdit('+t.id+')"'
+    +' title="클릭하면 이름 수정">'+t.name+' <span style="font-size:12px;color:var(--text3);font-weight:400">✎</span></h2>';
+}
+function renderTaskRow(t){
+  const isDone=t.status==='Done';
+  const catStyle=getCatStyle(t.cat);
+  const priCol=getPriColor(t.priority);
+  const priBg=getPriBg(t.priority);
+  const members=Array.isArray(t.member)?t.member:[t.member];
+  const col=MC[members[0]]||'#888';
+  const short=members.map(m=>m.replace(' 팀장님','').replace(' 프로','')).join(', ');
+  const isEd=editingDueId===t.id;
+  const dateEl=isEd
+    ?`<input class="date-input-inline" type="date" value="${t.due||''}" onchange="updateDue(${t.id},this.value)" onblur="cancelEditDue()" />`
+    :`<span class="b-date" onclick="startEditDue(${t.id})" title="클릭 → 기한 수정">${formatDate(t.due)||'날짜 없음'}</span>`;
+  const isEditingMember=editingMemberId===t.id;
+  const allMembers=['박기범 팀장님','김준형 프로','이광호 프로','오정희 프로'];
+  const memberEl=isEditingMember
+    ?`<div style="display:flex;flex-direction:column;gap:3px;padding:5px 8px;background:var(--surface2);border:1px solid var(--accent);border-radius:6px;z-index:10;position:relative" onclick="event.stopPropagation()">
+        ${allMembers.map(m=>`<label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:10px;color:var(--text2);white-space:nowrap">
+          <input type="checkbox" value="${m}" ${members.includes(m)?'checked':''} style="accent-color:var(--accent)" onchange="updateMember(${t.id})"> ${m.replace(' 팀장님','').replace(' 프로','')}
+        </label>`).join('')}
+        <button onclick="closeMemberEdit()" style="font-size:9px;color:var(--text3);background:none;border:none;cursor:pointer;text-align:right;padding:2px 0">닫기</button>
+      </div>`
+    :`<span style="font-size:10px;color:${col};white-space:nowrap;cursor:pointer;padding:2px 5px;border-radius:4px;border:1px solid transparent;transition:all 0.15s" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='transparent'" onclick="startMemberEdit(${t.id})" title="클릭 → 담당자 수정">${short}</span>`;
+
+  return `<div class="task-row${isDone?' done-row':''}">
+    <div class="task-check${isDone?' checked':''}" onclick="toggleTask(${t.id})"></div>
+    ${renderTaskNameEl(t,isDone)}
+    <div class="task-badges">
+      <span class="cat-pill" style="background:${catStyle.bg};color:${catStyle.color};border-color:${catStyle.border}" onclick="startCatEdit(${t.id},event)" title="클릭 → 범주 변경">${t.cat}</span>
+      <span class="cat-pill" style="background:${priBg};color:${priCol}" onclick="startPriEdit(${t.id},event)" title="클릭 → 중요도 변경">${t.priority}</span>
+      ${dateEl}
+      ${memberEl}
+    </div>
+    <button class="delete-btn" onclick="deleteTask(${t.id})">×</button>
+  </div>`;
+}
+
+function renderTasks(){
+  let list=[...TASKS];
+  if(state.cat) list=list.filter(t=>t.cat===state.cat);
+  if(state.member) list=list.filter(t=>{const ms=Array.isArray(t.member)?t.member:[t.member];return ms.includes(state.member);});
+  if(state.period==='today') list=list.filter(t=>t.due===TODAY);
+  else if(state.period==='week') list=list.filter(t=>t.due>=TODAY&&t.due<=WEEK_END);
+  list.sort((a,b)=>{const po={긴급:0,높음:1,보통:2,낮음:3};if((a.status==='Done')!==(b.status==='Done'))return a.status==='Done'?1:-1;return(po[a.priority]||2)-(po[b.priority]||2);});
+  const ml={'박기범 팀장님':'팀장님','김준형 프로':'준형','이광호 프로':'광호','오정희 프로':'오정희'};
+  const pl={today:'오늘',week:'이번 주',all:'전체'}[state.period];
+  return `
+    <div class="member-tabs">
+      ${['전체','박기범 팀장님','김준형 프로','이광호 프로','오정희 프로'].map(m=>`<button class="member-tab${(!state.member&&m==='전체')||(state.member===m)?' active':''}" onclick="setMemberFilter('${m==='전체'?'':m}')">${m==='전체'?'전체':m.replace(' 팀장님','').replace(' 프로','')}</button>`).join('')}
+    </div>
+    <div style="display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap">
+      ${(['전체',...(CATS.length>0?CATS.map(c=>c.name):['IC','DD','TP'])]).map((c,i)=>{
+        const isAll=c==='전체';
+        const active=isAll?!state.cat:state.cat===c;
+        const st=!isAll?getCatStyle(c):null;
+        const style=active&&st?`background:${st.bg};color:${st.color};border-color:${st.border}`:'';
+        return `<button class="filter-btn${active&&isAll?' on':active?' on':''}" style="${style}" onclick="setCatFilter('${isAll?'':c}')">${c}</button>`;
+      }).join('')}
+    </div>
+    <div class="period-tabs">
+      ${['today','week','all'].map(p=>`<button class="period-tab${state.period===p?' active':''}" onclick="setPeriod('${p}')">${{today:'오늘',week:'이번 주',all:'전체'}[p]}</button>`).join('')}
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
+      <span>${state.member?ml[state.member]:'전체'} · ${state.cat||'전체'} · ${pl} — ${list.length}개 &nbsp;<span style="color:var(--accent)">날짜 클릭 → 기한 수정</span></span>
+      <button class="add-btn" onclick="openTaskModal()">+ 태스크 추가</button>
+    </div>
+    <div class="task-grid">${list.length===0?'<div class="empty-state">해당 조건의 태스크가 없어요</div>':list.map(t=>renderTaskRow(t)).join('')}</div>
+  `;
+}
+
+function renderChecklist(){
+  return `
+    <div class="section-header">
+      <span class="section-title-main">팀 전원 확인 필수 체크리스트</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:11px;color:var(--text3)">${CHECKLIST.filter(c=>c.done).length} / ${CHECKLIST.length} 완료</span>
+        <button class="add-btn" onclick="openCheckModal()">+ 항목 추가</button>
+      </div>
+    </div>
+    <div class="checklist-grid">
+      ${CHECKLIST.map((c,i)=>{
+        const isEd=editingCheckId===c.id;
+        return `<div class="check-row" style="${c.done?'opacity:0.45':''}">
+        <span class="check-num">${String(i+1).padStart(2,'0')}</span>
+        <div class="task-check${c.done?' checked':''}" onclick="toggleCheck('${c.id}')"></div>
+        ${isEd
+          ?`<input class="check-edit-input" id="check-edit-${c.id}" value="${c.text.replace(/"/g,'&quot;')}" onblur="saveCheckEdit('${c.id}')" onkeydown="if(event.key==='Enter')saveCheckEdit('${c.id}');if(event.key==='Escape')cancelCheckEdit();" />`
+          :`<div class="task-name${c.done?' strikethrough':''}" style="cursor:pointer" onclick="startCheckEdit('${c.id}')" title="클릭하여 수정">${c.text}</div>`
+        }
+        <button class="delete-btn" onclick="deleteCheck('${c.id}')">×</button>
+      </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+function render(){
+  const el=document.getElementById('main-content');
+  if(!el) return;
+  if(state.view==='dashboard') el.innerHTML=renderDashboard();
+  else if(state.view==='tasks') el.innerHTML=renderTasks();
+  else if(state.view==='checklist') el.innerHTML=renderChecklist();
+  else if(state.view==='chat') el.innerHTML=renderChat();
+  else if(state.view==='taskdetail') el.innerHTML=renderTaskDetail();
+  else if(state.view==='wiki') el.innerHTML=renderWiki();
+  else if(state.view==='schedule') el.innerHTML=renderSchedule();
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const nm={dashboard:'nav-dashboard',checklist:'nav-checklist',chat:'nav-chat',wiki:null,taskdetail:null,schedule:'nav-schedule'};
+  if(nm[state.view]) document.getElementById(nm[state.view])?.classList.add('active');
+  // 사이드바 범주 동적 렌더링
+  const sidebarCats=document.getElementById('sidebar-cats');
+  if(sidebarCats){
+    const catList=CATS.length>0?CATS:[{name:'IC'},{name:'DD'},{name:'TP'}];
+    sidebarCats.innerHTML=catList.map((cat,i)=>{
+      const st=getCatStyle(cat.name);
+      const cnt=TASKS.filter(t=>t.cat===cat.name).length;
+      const isWikiActive=state.view==='wiki'&&state.wikiCat===cat.name;
+      const isTaskActive=state.view==='tasks'&&state.cat===cat.name;
+      return `<div style="display:flex;align-items:center;gap:2px">
+        <div class="nav-item${isTaskActive?' active':''}" style="flex:1" onclick="showView('tasks');setCatFilter('${cat.name}')">
+          <div class="nav-dot" style="background:${st.color}"></div>${cat.name}
+          <span class="nav-count">${cnt}</span>
+        </div>
+        <div class="nav-item${isWikiActive?' active':''}" style="padding:7px 8px;min-width:0;flex-shrink:0" onclick="openWiki('${cat.name}')" title="${cat.name} Wiki">
+          <span style="font-size:11px">📖</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  const ch=document.getElementById('nav-check-count');
+  if(ch) ch.textContent=CHECKLIST.filter(c=>!c.done).length;
+}
+
+// ─── ACTIONS ───
+function showView(v){state.view=v;render()}
+function setCatFilter(c){state.cat=c||null;state.view='tasks';render()}
+
+// ─── SCHEDULE VIEW ───
+let scheduleFilter={party:'전체',bigCat:'전체',category:'전체',member:'',sortBy:'default'};
+let selectedSchedId=null;
+let editingSchedId=null;
+
+function getScheduleData(){return SCHEDULE_DATA||DEFAULT_SCHEDULE;}
+
+function getCatColor(cat){
+  if(cat==='IC') return {bg:'var(--ic-bg)',color:'var(--ic)',border:'var(--ic-border)'};
+  if(cat==='DD') return {bg:'var(--dd-bg)',color:'var(--dd)',border:'var(--dd-border)'};
+  if(cat==='TP') return {bg:'var(--tp-bg)',color:'var(--tp)',border:'var(--tp-border)'};
+  return {bg:'var(--surface2)',color:'var(--text3)',border:'var(--border)'};
+}
+
+function renderSchedDetail(s){
+  var prereq=s.prereq||'';
+  var todos=s.todos||[];
+  var members=s.members||[];
+  var html='<div style="margin-top:10px;padding:14px 16px;background:var(--surface2);border-radius:10px;border-left:3px solid var(--accent);font-size:12px;line-height:1.8;box-shadow:0 1px 4px rgba(0,0,0,0.06)">';
+  if(prereq){
+    html+='<div style="margin-bottom:10px;display:flex;gap:8px;align-items:flex-start"><span style="color:var(--urgent);font-weight:700;white-space:nowrap;font-size:11px;padding:2px 8px;background:var(--urgent-bg);border-radius:4px">선행조건</span><span style="color:var(--text2)">'+prereq+'</span></div>';
+  }
+  if(todos.length>0){
+    html+='<div style="margin-bottom:10px"><div style="color:var(--ic);font-weight:700;font-size:11px;padding:2px 8px;background:var(--ic-bg);border-radius:4px;display:inline-block;margin-bottom:6px">챙겨야 할 사항</div><ul style="margin:0 0 0 12px;padding:0;list-style:disc">';
+    todos.forEach(function(t){html+='<li style="color:var(--text2);margin-bottom:2px">'+t+'</li>';});
+    html+='</ul></div>';
+  }
+  if(members.length>0){
+    html+='<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span style="color:var(--text3);font-size:11px;font-weight:600">담당자</span>';
+    members.forEach(function(m){
+      var col=MC[m]||'var(--text2)';
+      html+='<span style="color:'+col+';font-size:11px;padding:2px 8px;border-radius:99px;background:'+col+'22;border:1px solid '+col+'44;font-weight:500">'+m.replace(' 팀장님','').replace(' 프로','')+'</span>';
+    });
+    html+='</div>';
+  }
+  html+='</div>';
+  return html;
+}
+
+function renderSchedule(){
+  var data=getScheduleData();
+  var parties=['전체',...new Set(data.map(function(s){return s.party;}))];
+  var bigCats=['전체','IC','DD','TP'];
+  var baseData=data.filter(function(s){
+    if(scheduleFilter.party!=='전체'&&s.party!==scheduleFilter.party) return false;
+    if(scheduleFilter.bigCat!=='전체'&&(s.cat||'')!==scheduleFilter.bigCat) return false;
+    return true;
+  });
+  var cats=['전체',...new Set(baseData.map(function(s){return s.category;}))];
+  var filtered=baseData.filter(function(s){
+    if(scheduleFilter.category!=='전체'&&s.category!==scheduleFilter.category) return false;
+    if(scheduleFilter.member&&!(s.members||[]).includes(scheduleFilter.member)) return false;
+    return true;
+  });
+
+  // 확정일 정렬
+  if(scheduleFilter.sortBy==='date_asc'){
+    filtered=filtered.slice().sort(function(a,b){
+      var da=a.confirmedDate||'9999';var db=b.confirmedDate||'9999';
+      return da<db?-1:da>db?1:0;
+    });
+  } else if(scheduleFilter.sortBy==='date_desc'){
+    filtered=filtered.slice().sort(function(a,b){
+      var da=a.confirmedDate||'';var db=b.confirmedDate||'';
+      return da<db?1:da>db?-1:0;
+    });
+  }
+
+  // 마일스톤 데이터
+  var msData=MILESTONES_DATA.length>0?MILESTONES_DATA:DEFAULT_MILESTONES.map(function(m,i){return Object.assign({},m,{id:i});});
+
+  var groups={};
+  var groupOrder=[];
+  filtered.forEach(function(s){
+    var key=s.party+'||'+s.category;
+    if(!groups[key]){groups[key]={party:s.party,category:s.category,items:[],cat:s.cat||''};groupOrder.push(key);}
+    groups[key].items.push(s);
+  });
+
+  var STATUS_COLORS={'완료':'var(--done)','진행중':'var(--dd)','진행전':'var(--text3)','지연':'var(--urgent)'};
+  var STATUS_BG={'완료':'var(--tp-bg)','진행중':'var(--dd-bg)','진행전':'var(--surface2)','지연':'var(--urgent-bg)'};
+  var partyColors={'IGISX':'var(--ic)','양도인':'var(--dd)','M&G':'var(--tp)'};
+
+  var tableRows='';
+  groupOrder.forEach(function(key){
+    var g=groups[key];
+    var partyColor=partyColors[g.party]||'var(--text3)';
+    var cc=getCatColor(g.cat);
+    var catBadge=g.cat?('<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:'+cc.bg+';color:'+cc.color+';border:1px solid '+cc.border+';font-weight:600">'+g.cat+'</span>'):'<span style="color:var(--text3);font-size:11px">-</span>';
+
+    g.items.forEach(function(s,i){
+      var isSelected=selectedSchedId===s.id;
+      var isEditing=editingSchedId===s.id;
+      var sc=STATUS_COLORS[s.status]||'var(--text3)';
+      var sbg=STATUS_BG[s.status]||'var(--surface2)';
+
+      var memberBadges=(s.members||[]).map(function(m){
+        var col=MC[m]||'var(--text2)';
+        return '<span style="font-size:11px;padding:2px 7px;border-radius:99px;background:'+col+'22;color:'+col+';border:1px solid '+col+'33;font-weight:500;white-space:nowrap">'+m.replace(' 팀장님','').replace(' 프로','')+'</span>';
+      }).join(' ');
+
+      var sid2=s.id;
+      var draftEl=isEditing
+        ?('<input type="date" value="'+(s.draftDate||'')+'" onchange="updateSchedDate(this.dataset.id,this.dataset.field,this.value)" data-id="'+sid2+'" data-field="draftDate" style="font-size:12px;background:var(--surface2);border:1px solid var(--accent);border-radius:6px;color:var(--text);padding:3px 6px;outline:none;width:110px">')
+        :('<span style="font-size:12px;color:var(--text2);cursor:pointer;font-family:monospace" data-id='+sid2+'" onclick="editingSchedId=this.dataset.id;render()">'+(s.draftDate||'—')+'</span>');
+      var confEl=isEditing
+        ?('<input type="date" value="'+(s.confirmedDate||'')+'" onchange="updateSchedDate(this.dataset.id,this.dataset.field,this.value)" data-id="'+sid2+'" data-field="confirmedDate" style="font-size:12px;background:var(--surface2);border:1px solid var(--accent);border-radius:6px;color:var(--text);padding:3px 6px;outline:none;width:110px">')
+        :('<span style="font-size:12px;font-weight:700;color:var(--text);cursor:pointer;font-family:monospace" data-id='+sid2+'" onclick="editingSchedId=this.dataset.id;render()">'+(s.confirmedDate||'—')+'</span>');
+      var statusEl=isEditing
+        ?('<select onchange="updateSchedStatus(this.dataset.id,this.value)" data-id="'+sid2+'" style="font-size:12px;padding:3px 8px;border-radius:6px;background:var(--surface);border:1px solid var(--border2);color:var(--text);outline:none">'+['진행전','진행중','완료','지연'].map(function(st){return '<option value="'+st+'"'+(s.status===st?' selected':'')+'>'+st+'</option>';}).join('')+'</select>')
+        :('<span style="font-size:11px;padding:3px 10px;border-radius:99px;background:'+sbg+';color:'+sc+';cursor:pointer;border:1px solid '+sc+'44;font-weight:500" data-id="'+s.id+'" onclick="editingSchedId=this.dataset.id;render()">'+s.status+'</span>');
+
+      var sid=s.id;
+      var isOpen=selectedSchedId===sid;
+      var itemCell='<div data-id="'+sid+'" onclick="var d=this.dataset.id;selectedSchedId=selectedSchedId===d?null:d;render()" style="cursor:pointer"><div style="display:flex;align-items:center;gap:6px"><span style="color:var(--text);font-weight:500">'+s.item+'</span><span style="font-size:10px;color:var(--accent);background:var(--ic-bg);padding:1px 5px;border-radius:4px">'+(isOpen?'▲ 닫기':'▼ 상세')+'</span></div>'+(isOpen?renderSchedDetail(s):'')+'</div>';
+
+      var rowspan=i===0?' rowspan="'+g.items.length+'"':'';
+      tableRows+='<tr style="border-bottom:1px solid var(--border);transition:background 0.12s">';
+      if(i===0){
+        tableRows+='<td'+rowspan+' style="padding:10px 14px;font-size:12px;color:'+partyColor+';font-weight:700;border-right:1px solid var(--border);vertical-align:top;white-space:nowrap;background:var(--surface)">'+g.party+'</td>';
+        tableRows+='<td'+rowspan+' style="padding:10px 12px;border-right:1px solid var(--border);vertical-align:top;background:var(--surface)">'+catBadge+'</td>';
+        tableRows+='<td'+rowspan+' style="padding:10px 12px;font-size:12px;color:var(--text2);border-right:1px solid var(--border);vertical-align:top;background:var(--surface)">'+g.category+'</td>';
+      }
+      tableRows+='<td style="padding:10px 14px">'+itemCell+'</td>';
+      tableRows+='<td style="padding:10px 12px">'+memberBadges+'</td>';
+      tableRows+='<td style="padding:10px 12px;text-align:center">'+draftEl+'</td>';
+      tableRows+='<td style="padding:10px 12px;text-align:center">'+confEl+'</td>';
+      tableRows+='<td style="padding:10px 12px;text-align:center">'+statusEl+'</td>';
+      tableRows+='<td style="padding:10px 12px;text-align:center">'+(isEditing?'<button onclick="editingSchedId=null;render()" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);cursor:pointer;font-weight:500">저장</button>':'<button data-id="'+s.id+'" onclick="deleteSchedItem(this.dataset.id)" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;line-height:1">×</button>')+'</td>';
+      tableRows+='</tr>';
+    });
+  });
+
+  var summaryCards=['완료','진행중','진행전','지연'].map(function(st){
+    var cnt=filtered.filter(function(s){return s.status===st;}).length;
+    var col=STATUS_COLORS[st];var bg=STATUS_BG[st];
+    return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,0.04)"><div style="font-size:26px;font-weight:700;font-family:monospace;color:'+col+'">'+cnt+'</div><div style="font-size:12px;color:var(--text3);margin-top:3px;font-weight:500">'+st+'</div></div>';
+  }).join('');
+
+  function fBtn(active,onclick,label,col){
+    return '<button onclick="'+onclick+'" style="font-size:12px;padding:5px 14px;border-radius:99px;border:1px solid '+(active?col:'var(--border2)')+';background:'+(active?col+'18':'var(--surface)')+';color:'+(active?col:'var(--text2)')+';cursor:pointer;font-weight:'+(active?'700':'400')+';transition:all 0.15s">'+label+'</button>';
+  }
+
+  var partyBtns=parties.map(function(p){var col=partyColors[p]||'var(--accent)';return fBtn(scheduleFilter.party===p,"scheduleFilter.party='"+p+"';scheduleFilter.category='전체';render()",p,col);}).join('');
+  var bigCatBtns=bigCats.map(function(c){var col=c==='IC'?'var(--ic)':c==='DD'?'var(--dd)':c==='TP'?'var(--tp)':'var(--text2)';return fBtn(scheduleFilter.bigCat===c,"scheduleFilter.bigCat='"+c+"';scheduleFilter.category='전체';render()",c,col);}).join('');
+  var catBtns=cats.map(function(c){return fBtn(scheduleFilter.category===c,"scheduleFilter.category='"+c+"';render()",c,'var(--accent)');}).join('');
+  var memberBtns=['전체','박기범 팀장님','김준형 프로','이광호 프로','오정희 프로'].map(function(m){
+    var isAll=m==='전체';var active=isAll?(scheduleFilter.member===''):scheduleFilter.member===m;
+    var col=isAll?'var(--accent)':(MC[m]||'var(--accent)');
+    return fBtn(active,"scheduleFilter.member='"+(isAll?'':m)+"';render()",isAll?'전체':m.replace(' 팀장님','').replace(' 프로',''),col);
+  }).join('');
+
+  return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px"><div><div style="font-size:16px;font-weight:700;color:var(--text)">프로젝트 일정표</div><div style="font-size:12px;color:var(--text3);margin-top:3px">세부항목 ▼ 클릭 → 선행조건 / 챙겨야 할 사항 확인 | 날짜/상태 클릭 → 수정</div></div><button onclick="openAddSchedModal()" style="padding:7px 16px;border-radius:8px;border:1px solid var(--border2);background:var(--surface);color:var(--text2);cursor:pointer;font-size:13px;font-weight:500;box-shadow:0 1px 3px rgba(0,0,0,0.06)">+ 항목 추가</button></div>'
+    +'<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center"><span style="font-size:12px;color:var(--text3);font-weight:600;min-width:44px">당사자</span>'+partyBtns+'</div>'
+    +'<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center"><span style="font-size:12px;color:var(--text3);font-weight:600;min-width:44px">대범주</span>'+bigCatBtns+'</div>'
+    +'<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center"><span style="font-size:12px;color:var(--text3);font-weight:600;min-width:44px">소범주</span>'+catBtns+'</div>'
+    +'<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center"><span style="font-size:12px;color:var(--text3);font-weight:600;min-width:44px">담당자</span>'+memberBtns+'</div>'
+    +'<div style="display:flex;gap:6px;margin-bottom:18px;align-items:center"><span style="font-size:12px;color:var(--text3);font-weight:600;min-width:44px">정렬</span>'
+    +fBtn(scheduleFilter.sortBy==='default',"scheduleFilter.sortBy='default';render()",'기본순','var(--text2)')
+    +fBtn(scheduleFilter.sortBy==='date_asc',"scheduleFilter.sortBy='date_asc';render()",'확정일 ↑','var(--ic)')
+    +fBtn(scheduleFilter.sortBy==='date_desc',"scheduleFilter.sortBy='date_desc';render()",'확정일 ↓','var(--dd)')
+    +'</div>'
+    +'<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06)">'
+    +'<table style="width:100%;border-collapse:collapse">'
+    +'<thead><tr style="background:var(--surface2);border-bottom:2px solid var(--border)">'
+    +'<th style="padding:12px 14px;font-size:11px;color:var(--text3);text-align:left;letter-spacing:0.06em;text-transform:uppercase;font-weight:700">당사자</th>'
+    +'<th style="padding:12px 12px;font-size:11px;color:var(--text3);text-align:left;letter-spacing:0.06em;text-transform:uppercase;font-weight:700">대범주</th>'
+    +'<th style="padding:12px 12px;font-size:11px;color:var(--text3);text-align:left;letter-spacing:0.06em;text-transform:uppercase;font-weight:700">소범주</th>'
+    +'<th style="padding:12px 14px;font-size:11px;color:var(--text3);text-align:left;letter-spacing:0.06em;text-transform:uppercase;font-weight:700">세부항목</th>'
+    +'<th style="padding:12px 12px;font-size:11px;color:var(--text3);text-align:left;letter-spacing:0.06em;text-transform:uppercase;font-weight:700">담당자</th>'
+    +'<th style="padding:12px 12px;font-size:11px;color:var(--text3);text-align:center;letter-spacing:0.06em;text-transform:uppercase;font-weight:700">1ST DRAFT</th>'
+    +'<th style="padding:12px 12px;font-size:11px;color:var(--text3);text-align:center;letter-spacing:0.06em;text-transform:uppercase;font-weight:700">확정일</th>'
+    +'<th style="padding:12px 12px;font-size:11px;color:var(--text3);text-align:center;letter-spacing:0.06em;text-transform:uppercase;font-weight:700">상태</th>'
+    +'<th style="padding:12px 12px;width:44px"></th>'
+    +'</tr></thead>'
+    +(function(){
+      // 마일스톤 행 생성
+      var msRows='';
+      // 정렬 모드일 때만 마일스톤 끼워넣기
+      var msColor='#7c3aed';
+      var msBg='#f5f0ff';
+      var msBorder='#ddd6fe';
+      msData.forEach(function(m){
+        if(!m.dateStr) return;
+        msRows+='<tr style="background:'+msBg+';border-top:2px solid '+msBorder+';border-bottom:2px solid '+msBorder+'">'
+          +'<td colspan="3" style="padding:8px 14px;font-size:11px;font-weight:700;color:'+msColor+'">⬦ 마일스톤</td>'
+          +'<td colspan="2" style="padding:8px 14px;font-size:13px;font-weight:700;color:'+msColor+'">'+m.label+'</td>'
+          +'<td style="padding:8px 12px;text-align:center;font-size:12px;color:'+msColor+'">—</td>'
+          +'<td style="padding:8px 12px;text-align:center;font-family:monospace;font-size:12px;font-weight:700;color:'+msColor+'">'+m.dateStr+'</td>'
+          +'<td colspan="2" style="padding:8px 12px;font-size:11px;color:'+msColor+';opacity:0.8">'+(m.detail||'')+'</td>'
+          +'</tr>';
+      });
+
+      // 정렬 모드면 마일스톤을 확정일 기준으로 끼워넣기
+      if(scheduleFilter.sortBy==='date_asc'||scheduleFilter.sortBy==='date_desc'){
+        // 마일스톤과 일정 항목을 합쳐서 확정일로 정렬
+        var combined=[];
+        filtered.forEach(function(s){combined.push({type:'item',data:s,date:s.confirmedDate||'9999'});});
+        msData.forEach(function(m){if(m.dateStr) combined.push({type:'ms',data:m,date:m.dateStr});});
+        combined.sort(function(a,b){
+          return scheduleFilter.sortBy==='date_asc'?(a.date<b.date?-1:a.date>b.date?1:0):(a.date<b.date?1:a.date>b.date?-1:0);
+        });
+
+        var mixedRows='';
+        var renderedGroups={};
+        combined.forEach(function(item){
+          if(item.type==='ms'){
+            var m=item.data;
+            mixedRows+='<tr style="background:'+msBg+';border-top:2px solid '+msBorder+';border-bottom:2px solid '+msBorder+'">'
+              +'<td colspan="3" style="padding:8px 14px;font-size:11px;font-weight:700;color:'+msColor+'">⬦ 마일스톤</td>'
+              +'<td colspan="2" style="padding:8px 14px;font-size:13px;font-weight:700;color:'+msColor+'">'+m.label+'</td>'
+              +'<td style="padding:8px 12px;text-align:center;font-size:12px;color:'+msColor+'">—</td>'
+              +'<td style="padding:8px 12px;text-align:center;font-family:monospace;font-size:12px;font-weight:700;color:'+msColor+'">'+m.dateStr+'</td>'
+              +'<td colspan="2" style="padding:8px 12px;font-size:11px;color:'+msColor+';opacity:0.8">'+(m.detail||'')+'</td>'
+              +'</tr>';
+          } else {
+            var s=item.data;
+            // 정렬 모드에서는 그룹 없이 단순 행으로
+            var isSelected=selectedSchedId===s.id;
+            var isEditing=editingSchedId===s.id;
+            var cc=getCatColor(s.cat||'');
+            var catBadge=s.cat?('<span style="font-size:10px;padding:2px 7px;border-radius:99px;background:'+cc.bg+';color:'+cc.color+';border:1px solid '+cc.border+';font-weight:600">'+s.cat+'</span>'):'';
+            var memberBadges2=(s.members||[]).map(function(m){var col=MC[m]||'var(--text2)';return '<span style="font-size:11px;padding:2px 6px;border-radius:99px;background:'+col+'22;color:'+col+';font-weight:500">'+m.replace(' 팀장님','').replace(' 프로','')+'</span>';}).join(' ');
+            var sid2=s.id;
+            var STATUS_COLORS2={'완료':'var(--done)','진행중':'var(--dd)','진행전':'var(--text3)','지연':'var(--urgent)'};
+            var STATUS_BG2={'완료':'var(--tp-bg)','진행중':'var(--dd-bg)','진행전':'var(--surface2)','지연':'var(--urgent-bg)'};
+            var sc2=STATUS_COLORS2[s.status]||'var(--text3)';
+            var sbg2=STATUS_BG2[s.status]||'var(--surface2)';
+            var confDisp='<span style="font-size:12px;font-weight:700;color:var(--text);cursor:pointer;font-family:monospace" data-id="'+sid2+'" onclick="editingSchedId=this.dataset.id;render()">'+(s.confirmedDate||'—')+'</span>';
+            var statusDisp='<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:'+sbg2+';color:'+sc2+';border:1px solid '+sc2+'44;font-weight:500;cursor:pointer" data-id="'+sid2+'" onclick="editingSchedId=this.dataset.id;render()">'+s.status+'</span>';
+            var itemCell2='<div onclick="var d2=this.dataset.id;selectedSchedId=selectedSchedId===d2?null:d2;render()" data-id="'+sid2+'" style="cursor:pointer"><div style="display:flex;align-items:center;gap:6px"><span style="color:var(--text);font-weight:500">'+s.item+'</span><span style="font-size:10px;color:var(--accent);background:var(--ic-bg);padding:1px 4px;border-radius:4px">'+(isSelected?'▲':'▼')+'</span></div>'+(isSelected?renderSchedDetail(s):'')+'</div>';
+            var partyColors2={'IGISX':'var(--ic)','양도인':'var(--dd)','M&G':'var(--tp)'};
+            var pc=partyColors2[s.party]||'var(--text3)';
+            mixedRows+='<tr style="border-bottom:1px solid var(--border)">'
+              +'<td style="padding:8px 12px;font-size:12px;color:'+pc+';font-weight:600">'+s.party+'</td>'
+              +'<td style="padding:8px 10px">'+catBadge+'</td>'
+              +'<td style="padding:8px 12px;font-size:11px;color:var(--text2)">'+s.category+'</td>'
+              +'<td style="padding:8px 14px">'+itemCell2+'</td>'
+              +'<td style="padding:8px 10px">'+memberBadges2+'</td>'
+              +'<td style="padding:8px 12px;text-align:center;font-size:12px;font-family:monospace;color:var(--text2)">'+(s.draftDate||'—')+'</td>'
+              +'<td style="padding:8px 12px;text-align:center">'+confDisp+'</td>'
+              +'<td style="padding:8px 12px;text-align:center">'+statusDisp+'</td>'
+              +'<td style="padding:8px 10px;text-align:center"><button data-id="'+s.id+'" onclick="deleteSchedItem(this.dataset.id)" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px">×</button></td>'
+              +'</tr>';
+          }
+        });
+        return '<tbody>'+mixedRows+'</tbody>';
+      }
+
+      // 기본 모드: 마일스톤을 상단에 표시
+      var msHeaderRow='<tr style="background:'+msBg+';border-bottom:1px solid '+msBorder+'">'
+        +'<td colspan="9" style="padding:10px 14px">'
+        +'<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">'
+        +'<span style="font-size:11px;font-weight:700;color:'+msColor+'">⬦ 마일스톤</span>'
+        +msData.filter(function(m){return m.dateStr;}).map(function(m){
+          return '<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;background:white;border:1px solid '+msBorder+';font-size:11px">'
+            +'<span style="font-weight:700;color:'+msColor+'">'+m.label+'</span>'
+            +'<span style="color:#9ca3af;font-family:monospace;font-size:10px">'+m.dateStr+'</span>'
+            +'</span>';
+        }).join('')
+        +'</div></td></tr>';
+
+      return '<tbody>'+(filtered.length===0?'<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);font-size:13px">해당 항목이 없어요</td></tr>':msHeaderRow+tableRows)+'</tbody>';
+    })()
+    +'</table></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px">'+summaryCards+'</div>';
+}
+
+function updateSchedDate(id,field,val){
+  var data=getScheduleData();var item=data.find(function(s){return s.id===id;});
+  if(!item) return;item[field]=val;dbSetScheduleItem(item);if(SCHEDULE_DATA) SCHEDULE_DATA=data;
+}
+function updateSchedStatus(id,val){
+  var data=getScheduleData();var item=data.find(function(s){return s.id===id;});
+  if(!item) return;item.status=val;dbSetScheduleItem(item);editingSchedId=null;render();
+}
+function updateSchedMember(id,member,checked){
+  var data=getScheduleData();var item=data.find(function(s){return s.id===id;});
+  if(!item) return;if(!item.members) item.members=[];
+  if(checked){if(!item.members.includes(member)) item.members.push(member);}
+  else{item.members=item.members.filter(function(m){return m!==member;});}
+  dbSetScheduleItem(item);if(SCHEDULE_DATA) SCHEDULE_DATA=data;
+}
+function deleteSchedItem(id){
+  if(!confirm('삭제할까요?')) return;
+  dbDeleteScheduleItem(id);
+  if(SCHEDULE_DATA) SCHEDULE_DATA=SCHEDULE_DATA.filter(function(s){return s.id!==id;});
+  editingSchedId=null;render();
+}
+function openAddSchedModal(){
+  var party=prompt('당사자 (IGISX / 양도인 / M&G)');if(!party) return;
+  var category=prompt('소범주');if(!category) return;
+  var item=prompt('세부항목명');if(!item) return;
+  var confirmed=prompt('확정일 (YYYY-MM-DD)');
+  var newId='s'+Date.now();
+  var newItem={id:newId,party:party,category:category,item:item,draftDate:'',confirmedDate:confirmed||'',cat:'IC',status:'진행전',members:[]};
+  dbAddScheduleItem(newItem);
+  if(SCHEDULE_DATA) SCHEDULE_DATA=[...SCHEDULE_DATA,newItem];else SCHEDULE_DATA=[...DEFAULT_SCHEDULE,newItem];
+  render();
+}
+
+
+function openWiki(catName){state.view='wiki';state.wikiCat=catName;state.wikiSection=null;render();}
+
+// ─── WIKI RENDER ───
+function renderWiki(){
+  const catName=state.wikiCat;
+  if(!catName) return '<div class="empty-state">범주를 선택해주세요</div>';
+  const st=getCatStyle(catName);
+  const wikiCat=WIKI_DATA[catName]||{sections:{}};
+  const sections=Object.values(wikiCat.sections||{}).sort((a,b)=>a.id-b.id);
+  const activeSec=state.wikiSection!=null?sections.find(s=>s.id===state.wikiSection):sections[0]||null;
+
+  const sectionTabs=sections.map(s=>`
+    <div onclick="state.wikiSection=${s.id};render()" style="padding:8px 14px;cursor:pointer;font-size:12px;border-radius:8px;white-space:nowrap;
+      ${activeSec&&activeSec.id===s.id?'background:'+st.bg+';color:'+st.color+';border:1px solid '+st.border:'color:var(--text2);border:1px solid transparent'}
+      ;transition:all 0.15s" onmouseover="if(${activeSec?activeSec.id:-1}!==${s.id})this.style.background='var(--surface2)'" onmouseout="if(${activeSec?activeSec.id:-1}!==${s.id})this.style.background='transparent'">
+      ${s.title}
+      ${s.status?'<span style="font-size:9px;margin-left:4px;padding:1px 5px;border-radius:99px;background:'+(s.status==='완료'?'var(--tp-bg)':s.status==='진행중'?'var(--dd-bg)':'var(--surface2)')+';color:'+(s.status==='완료'?'var(--tp)':s.status==='진행중'?'var(--dd)':'var(--text3)')+'">'+s.status+'</span>':''}
+    </div>`).join('');
+
+  const sectionContent=activeSec?`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <h3 style="font-size:16px;font-weight:500">${activeSec.title}</h3>
+        <select onchange="updateWikiStatus('${catName}',${activeSec.id},this.value)" style="font-size:11px;padding:3px 8px;border-radius:6px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);outline:none;cursor:pointer">
+          <option value="" ${!activeSec.status?'selected':''}>상태 없음</option>
+          <option value="진행중" ${activeSec.status==='진행중'?'selected':''}>진행중</option>
+          <option value="검토중" ${activeSec.status==='검토중'?'selected':''}>검토중</option>
+          <option value="완료" ${activeSec.status==='완료'?'selected':''}>완료</option>
+          <option value="보류" ${activeSec.status==='보류'?'selected':''}>보류</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button onclick="aiSummarizeWiki('${catName}',${activeSec.id})" style="font-size:11px;padding:5px 12px;border-radius:7px;border:1px solid ${st.border};background:${st.bg};color:${st.color};cursor:pointer">✨ AI 정리</button>
+        <button onclick="addWikiMail('${catName}',${activeSec.id})" style="font-size:11px;padding:5px 12px;border-radius:7px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer">+ 메일 추가</button>
+        <button onclick="deleteWikiSection('${catName}',${activeSec.id})" style="font-size:11px;padding:5px 12px;border-radius:7px;border:1px solid var(--border2);background:transparent;color:var(--urgent);cursor:pointer">삭제</button>
+      </div>
+    </div>
+
+    <!-- AI 정리 내용 -->
+    <div style="background:var(--surface);border:1px solid ${st.border};border-radius:10px;padding:16px;margin-bottom:14px">
+      <div style="font-size:11px;color:${st.color};font-weight:500;margin-bottom:10px;letter-spacing:0.06em;text-transform:uppercase">핵심 정리</div>
+      ${activeSec.summary
+        ?'<div style="font-size:13px;color:var(--text2);line-height:1.8;white-space:pre-wrap">'+activeSec.summary+'</div>'
+        :'<div style="font-size:12px;color:var(--text3);font-style:italic">메일을 추가하고 AI 정리 버튼을 누르면 핵심 내용을 자동 정리해줘요</div>'
+      }
+    </div>
+
+    <!-- 서류/체크리스트 -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:500;color:var(--text)">서류 · 체크리스트</div>
+        <button onclick="addWikiDoc('${catName}',${activeSec.id})" style="font-size:10px;padding:3px 9px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer">+ 추가</button>
+      </div>
+      ${(activeSec.docs||[]).length===0
+        ?'<div style="font-size:11px;color:var(--text3);font-style:italic">필요 서류나 액션 항목을 추가하세요</div>'
+        :'<div style="display:flex;flex-direction:column;gap:4px">'+(activeSec.docs||[]).map((doc,i)=>`
+          <div style="display:flex;align-items:center;gap:7px;padding:6px 9px;background:var(--surface2);border-radius:6px">
+            <div style="width:13px;height:13px;border-radius:3px;border:1.5px solid ${doc.done?'var(--done)':'var(--border2)'};background:${doc.done?'var(--done)':'transparent'};cursor:pointer;flex-shrink:0" onclick="toggleWikiDoc('${catName}',${activeSec.id},${i})"></div>
+            <span style="flex:1;font-size:12px;color:${doc.done?'var(--text3)':'var(--text)'};${doc.done?'text-decoration:line-through':''}">${doc.text}</span>
+            <button onclick="deleteWikiDoc('${catName}',${activeSec.id},${i})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px">×</button>
+          </div>`).join('')+'</div>'
+      }
+    </div>
+
+    <!-- 메일 히스토리 -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:10px">메일 히스토리</div>
+      ${(activeSec.mails||[]).length===0
+        ?'<div style="font-size:11px;color:var(--text3);font-style:italic">관련 메일을 추가하면 AI가 핵심 내용을 정리해줘요</div>'
+        :'<div style="display:flex;flex-direction:column;gap:8px">'+(activeSec.mails||[]).map((mail,i)=>`
+          <div style="padding:10px 12px;background:var(--surface2);border-radius:8px;border-left:3px solid ${st.color}">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace">${mail.date||''} ${mail.subject||''}</span>
+              <button onclick="deleteWikiMail('${catName}',${activeSec.id},${i})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px">×</button>
+            </div>
+            <div style="font-size:11px;color:var(--text2);line-height:1.6;max-height:80px;overflow:hidden;cursor:pointer" onclick="this.style.maxHeight=this.style.maxHeight==='none'?'80px':'none'">${mail.content.replace(/\n/g,'<br>').substring(0,300)}${mail.content.length>300?'... <span style=\'color:var(--accent)\'>더 보기</span>':''}</div>
+          </div>`).join('')+'</div>'
+      }
+    </div>
+
+    <!-- 메모 -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px">
+      <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:8px">메모</div>
+      <textarea placeholder="자유롭게 메모하세요..." onblur="saveWikiNotes('${catName}',${activeSec.id},this.value)" style="width:100%;background:transparent;border:none;color:var(--text);font-size:12px;font-family:'Noto Sans KR',sans-serif;outline:none;resize:none;min-height:80px;line-height:1.6">${activeSec.notes||''}</textarea>
+    </div>
+  `:'<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:12px;color:var(--text3)"><div style="font-size:28px">📖</div><div style="font-size:13px">섹션을 추가하거나 선택하세요</div></div>';
+
+  return `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+      <button onclick="showView('dashboard')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:4px 8px;border-radius:6px;border:1px solid var(--border)">← 대시보드</button>
+      <span style="color:var(--text3)">|</span>
+      <span style="font-size:15px;font-weight:500;color:${st.color}">${catName}</span>
+      <span style="font-size:12px;color:var(--text3)">Wiki</span>
+    </div>
+
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;align-items:center">
+      ${sectionTabs}
+      <button onclick="addWikiSection('${catName}')" style="padding:8px 14px;cursor:pointer;font-size:12px;border-radius:8px;border:1px dashed var(--border2);background:transparent;color:var(--text3)">+ 섹션 추가</button>
+    </div>
+
+    ${sectionContent}
+  `;
+}
+
+// ─── WIKI 조작 함수 ───
+function addWikiSection(catName){
+  const title=prompt('섹션 이름을 입력하세요 (예: 법률실사, 재무실사, MOU 연장)');
+  if(!title||!title.trim()) return;
+  const existing=Object.values((WIKI_DATA[catName]||{}).sections||{});
+  const newId=existing.length>0?Math.max(...existing.map(s=>s.id))+1:0;
+  const section={id:newId,title:title.trim(),summary:'',docs:[],mails:[],notes:'',status:'',updatedAt:TODAY};
+  dbSetWikiSection(catName,section);
+  state.wikiSection=newId;
+}
+function deleteWikiSection(catName,sectionId){
+  if(!confirm('이 섹션을 삭제할까요?')) return;
+  dbDeleteWikiSection(catName,sectionId);
+  state.wikiSection=null;
+  render();
+}
+function updateWikiStatus(catName,sectionId,status){
+  const sec=Object.values((WIKI_DATA[catName]||{}).sections||{}).find(s=>s.id===sectionId);
+  if(sec){sec.status=status;dbSetWikiSection(catName,sec);}
+}
+function addWikiDoc(catName,sectionId){
+  const text=prompt('서류 또는 확인 항목을 입력하세요');
+  if(!text||!text.trim()) return;
+  const sec=Object.values((WIKI_DATA[catName]||{}).sections||{}).find(s=>s.id===sectionId);
+  if(!sec) return;
+  if(!sec.docs) sec.docs=[];
+  sec.docs.push({text:text.trim(),done:false});
+  dbSetWikiSection(catName,sec);
+}
+function toggleWikiDoc(catName,sectionId,idx){
+  const sec=Object.values((WIKI_DATA[catName]||{}).sections||{}).find(s=>s.id===sectionId);
+  if(sec&&sec.docs&&sec.docs[idx]){sec.docs[idx].done=!sec.docs[idx].done;dbSetWikiSection(catName,sec);}
+}
+function deleteWikiDoc(catName,sectionId,idx){
+  const sec=Object.values((WIKI_DATA[catName]||{}).sections||{}).find(s=>s.id===sectionId);
+  if(sec&&sec.docs){sec.docs.splice(idx,1);dbSetWikiSection(catName,sec);}
+}
+function addWikiMail(catName,sectionId){
+  const content=prompt('메일 내용을 붙여넣으세요');
+  if(!content||!content.trim()) return;
+  const subject=prompt('메일 제목 또는 날짜를 입력하세요 (선택)');
+  const sec=Object.values((WIKI_DATA[catName]||{}).sections||{}).find(s=>s.id===sectionId);
+  if(!sec) return;
+  if(!sec.mails) sec.mails=[];
+  sec.mails.push({content:content.trim(),subject:subject||'',date:TODAY});
+  dbSetWikiSection(catName,sec);
+}
+function deleteWikiMail(catName,sectionId,idx){
+  const sec=Object.values((WIKI_DATA[catName]||{}).sections||{}).find(s=>s.id===sectionId);
+  if(sec&&sec.mails){sec.mails.splice(idx,1);dbSetWikiSection(catName,sec);}
+}
+function saveWikiNotes(catName,sectionId,val){
+  const sec=Object.values((WIKI_DATA[catName]||{}).sections||{}).find(s=>s.id===sectionId);
+  if(sec){sec.notes=val;dbSetWikiSection(catName,sec);}
+}
+
+async function aiSummarizeWiki(catName,sectionId){
+  const key=getApiKey();
+  if(!key){alert('OpenAI API Key를 먼저 설정해주세요');openApiKeyModal();return;}
+  const sec=Object.values((WIKI_DATA[catName]||{}).sections||{}).find(s=>s.id===sectionId);
+  if(!sec) return;
+  const mailContext=(sec.mails||[]).map(m=>(m.subject?'['+m.subject+']\n':'')+m.content).join('\n\n---\n\n');
+  if(!mailContext){alert('메일을 먼저 추가해주세요');return;}
+
+  const btn=document.querySelector('button[onclick*="aiSummarizeWiki"]');
+  if(btn){btn.textContent='분석 중...';btn.disabled=true;}
+
+  const prompt='당신은 부동산 PF 펀드 딜 전문가입니다.\n\n'
+    +'프로젝트: 신촌 더시우 (IGIS X)\n'
+    +'범주: '+catName+'\n'
+    +'섹션: '+sec.title+'\n\n'
+    +'아래 메일 체인을 읽고 다음을 정리해줘:\n'
+    +'1. 현재 진행 상황 요약\n'
+    +'2. 확정된 사항 / 결론\n'
+    +'3. 아직 미결인 사항\n'
+    +'4. 필요한 서류 또는 후속 조치\n'
+    +'5. 주의사항\n\n'
+    +'[메일 내용]\n'+mailContext;
+
+  try{
+    const wikiSummary=await callAI([{role:'user',content:prompt}],null,1500);
+    sec.summary=wikiSummary;
+    sec.updatedAt=TODAY;
+    dbSetWikiSection(catName,sec);
+  }catch(e){
+    alert('AI 정리 오류: '+e.message);
+    if(btn){btn.textContent='✨ AI 정리';btn.disabled=false;}
+  }
+}
+
+// ─── AI CHAT ───
+let chatHistory=[];
+let chatLoading=false;
+
+function renderChat(){
+  const msgs=chatHistory.map(m=>{
+    const isUser=m.role==='user';
+    // 출처 태그 하이라이트: (→ [출처-N]: ...) 또는 (→ Wiki: ...) 등
+    const formatted=isUser?m.content:m.content
+      .replace(/\(→ \[출처-(\d+)\][^)]*\)/g,'<span style="display:inline-block;font-size:10px;padding:1px 7px;border-radius:99px;background:var(--ic-bg);color:var(--ic);border:1px solid var(--ic-border);margin:0 2px;cursor:default">$&</span>')
+      .replace(/\(→ Wiki:[^)]*\)/g,'<span style="display:inline-block;font-size:10px;padding:1px 7px;border-radius:99px;background:var(--dd-bg);color:var(--dd);border:1px solid var(--dd-border);margin:0 2px">$&</span>')
+      .replace(/\(→ 태스크 현황[^)]*\)/g,'<span style="display:inline-block;font-size:10px;padding:1px 7px;border-radius:99px;background:var(--tp-bg);color:var(--tp);border:1px solid var(--tp-border);margin:0 2px">$&</span>')
+      .replace(/\(→ 일반 실무 지식[^)]*\)/g,'<span style="display:inline-block;font-size:10px;padding:1px 7px;border-radius:99px;background:var(--surface2);color:var(--text3);margin:0 2px">$&</span>');
+    // 서류 패널 생성
+  var docList2=Object.values(uploadedDocuments);
+  var docsPanel='<div style="margin-bottom:16px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.05)">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+    +'<span style="font-size:13px;font-weight:700;color:var(--text)">참조 서류</span>'
+    +'<label style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:8px;background:var(--accent);color:#fff;cursor:pointer;font-size:12px;font-weight:600">'
+    +'+ 서류 업로드'
+    +'<input type="file" accept=".txt,.md,.csv,.json,.html" style="display:none" onchange="uploadDocument(this.files[0])">'
+    +'</label></div>'
+    +(docList2.length===0
+      ?'<p style="font-size:12px;color:var(--text3);margin:0;text-align:center">MOU, SPA 초안 등을 업로드하면 AI가 내용을 참조해 답변해요.</p>'
+      :'<div style="display:flex;flex-wrap:wrap;gap:8px">'
+        +docList2.map(function(d){
+          var dname=d.name;var did=d.id;
+          return '<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:var(--ic-bg);border:1px solid var(--ic-border);border-radius:8px;font-size:11px;color:var(--ic);font-weight:500">'
+            +dname
+            +'<button onclick="deleteDocument(\''+did+'\')" style="background:none;border:none;color:var(--ic);cursor:pointer;font-size:14px;line-height:1;padding:0 0 0 4px">x</button>'
+            +'</span>';
+        }).join('')
+        +'</div>'
+    )
+    +'</div>';
+
+  return `<div style="display:flex;gap:10px;margin-bottom:16px;${isUser?'flex-direction:row-reverse':''}">
+      <div style="width:28px;height:28px;border-radius:50%;background:${isUser?'var(--accent)':'#2a2a3a'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0;color:#fff">${isUser?'나':'AI'}</div>
+      <div style="max-width:82%;padding:11px 14px;border-radius:${isUser?'14px 4px 14px 14px':'4px 14px 14px 14px'};background:${isUser?'var(--accent)':'var(--surface)'};border:1px solid ${isUser?'var(--accent)':'var(--border)'};font-size:13px;color:var(--text);line-height:1.8;white-space:pre-wrap">${formatted}</div>
+    </div>`;
+  }).join('');
+
+  // 서류 패널 생성
+  var docList2=Object.values(uploadedDocuments);
+  var docsPanel='<div style="margin-bottom:16px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.05)">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+    +'<span style="font-size:13px;font-weight:700;color:var(--text)">참조 서류</span>'
+    +'<label style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:8px;background:var(--accent);color:#fff;cursor:pointer;font-size:12px;font-weight:600">'
+    +'+ 서류 업로드'
+    +'<input type="file" accept=".txt,.md,.csv,.json,.html" style="display:none" onchange="uploadDocument(this.files[0])">'
+    +'</label></div>'
+    +(docList2.length===0
+      ?'<p style="font-size:12px;color:var(--text3);margin:0;text-align:center">MOU, SPA 초안 등을 업로드하면 AI가 내용을 참조해 답변해요.</p>'
+      :'<div style="display:flex;flex-wrap:wrap;gap:8px">'
+        +docList2.map(function(d){
+          var dname=d.name;var did=d.id;
+          return '<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:var(--ic-bg);border:1px solid var(--ic-border);border-radius:8px;font-size:11px;color:var(--ic);font-weight:500">'
+            +dname
+            +'<button onclick="deleteDocument(\''+did+'\')" style="background:none;border:none;color:var(--ic);cursor:pointer;font-size:14px;line-height:1;padding:0 0 0 4px">x</button>'
+            +'</span>';
+        }).join('')
+        +'</div>'
+    )
+    +'</div>';
+
+  return `
+    <div style="display:flex;flex-direction:column;height:calc(100vh - 110px)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div>
+          <div style="font-size:15px;font-weight:500">AI 채팅</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">프로젝트 컨텍스트를 알고 있는 AI에게 질문하세요</div>
+        </div>
+        <button onclick="clearChat()" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text3);cursor:pointer">대화 초기화</button>
+      </div>
+      ${docsPanel}
+      ${chatHistory.length===0?`
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--text3)">
+          <div style="font-size:32px">💬</div>
+          <div style="font-size:13px">프로젝트 관련 무엇이든 물어보세요</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:500px">
+            ${['법률실사 체크리스트 알려줘','2차 IC까지 뭘 준비해야 해?','SPA 검토 시 주요 쟁점은?','KYC 진행 절차 알려줘','오늘 마감인 태스크 요약해줘'].map(q=>`<button onclick="quickChat('${q}')" style="font-size:11px;padding:5px 12px;border-radius:99px;border:1px solid var(--border2);background:var(--surface);color:var(--text2);cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">${q}</button>`).join('')}
+          </div>
+        </div>`:`
+        <div id="chat-messages" style="flex:1;overflow-y:auto;padding-right:4px;margin-bottom:12px">${msgs}${chatLoading?'<div style="display:flex;gap:10px;margin-bottom:16px"><div style="width:28px;height:28px;border-radius:50%;background:#333;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff">AI</div><div style="padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:4px 14px 14px 14px;color:var(--text3);font-size:13px">생각 중...</div></div>':''}</div>`}
+      <div style="display:flex;gap:8px;padding-top:8px;border-top:1px solid var(--border)">
+        <textarea id="chat-input" placeholder="질문을 입력하세요... (Enter: 전송, Shift+Enter: 줄바꿈)" style="flex:1;padding:10px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;resize:none;height:48px;line-height:1.5;transition:border-color 0.15s" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'" oninput="this.style.height='48px';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
+        <button onclick="sendChat()" style="padding:0 18px;border-radius:10px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:13px;font-family:'Noto Sans KR',sans-serif;white-space:nowrap;align-self:flex-end;height:48px">전송</button>
+      </div>
+    </div>
+  `;
+}
+
+function quickChat(q){
+  document.getElementById('chat-input')&&(document.getElementById('chat-input').value=q);
+  sendChat(q);
+}
+
+function clearChat(){chatHistory=[];render();}
+
+async function sendChat(overrideMsg){
+  const inp=document.getElementById('chat-input');
+  const msg=(overrideMsg||inp?.value||'').trim();
+  if(!msg) return;
+  const key=getApiKey();
+  if(!key){alert('OpenAI API Key를 먼저 설정해주세요');openApiKeyModal();return;}
+  if(inp) inp.value='';
+
+  chatHistory.push({role:'user',content:msg});
+  chatLoading=true;
+  render();
+  setTimeout(()=>{const el=document.getElementById('chat-messages');if(el)el.scrollTop=el.scrollHeight;},50);
+
+  // 프로젝트 컨텍스트 생성
+  const taskSummary=TASKS.slice(0,30).map(t=>'['+t.cat+'] '+t.name+' / '+(Array.isArray(t.member)?t.member.join(','):t.member)+' / '+t.due+' / '+t.status+' / '+t.priority).join('\n');
+  const todayTasks=TASKS.filter(t=>t.due===TODAY&&t.status!=='Done').map(t=>t.name+'('+(Array.isArray(t.member)?t.member.join(','):t.member)+')').join(', ');
+
+  // Wiki 메일 컨텍스트 수집 (출처 태깅용)
+  let mailContext='';
+  let mailIndex=[];  // [{ref, date, subject, from, to}]
+  let refNum=1;
+  Object.entries(WIKI_DATA).forEach(([catName,catData])=>{
+    Object.values((catData.sections)||{}).forEach(sec=>{
+      (sec.mails||[]).forEach(mail=>{
+        const ref='[출처-'+refNum+']';
+        mailIndex.push({ref, catName, sectionTitle:sec.title, date:mail.date||'날짜미상', subject:mail.subject||'제목없음', content:mail.content});
+        mailContext+='\n'+ref+' ('+catName+' > '+sec.title+' | '+mail.date+' | '+mail.subject+')\n'+mail.content+'\n';
+        refNum++;
+      });
+    });
+  });
+
+  // Wiki 요약 컨텍스트
+  let wikiContext='';
+  Object.entries(WIKI_DATA).forEach(([catName,catData])=>{
+    Object.values((catData.sections)||{}).forEach(sec=>{
+      if(sec.summary){
+        wikiContext+='\n['+catName+' > '+sec.title+' | 상태:'+( sec.status||'미지정')+']\n'+sec.summary+'\n';
+      }
+    });
+  });
+
+  const mailRefList=mailIndex.length>0
+    ?'\n\n[메일 출처 목록]\n'+mailIndex.map(m=>m.ref+': '+m.date+' | '+m.subject+' | '+m.catName+'>'+m.sectionTitle).join('\n')
+    :'';
+
+  const systemPrompt='당신은 부동산 PF 펀드 딜 전문 AI 어시스턴트입니다.\n'
+    +'현재 프로젝트: 신촌 더시우 (IGIS X)\n'
+    +'오늘 날짜: '+TODAY+'\n\n'
+    +'[팀원]\n'
+    +'- 박기범 팀장님: 딜 총괄, IC 의사결정, 대주/김앤장 협의\n'
+    +'- 김준형 프로: Legal DD, SPA, KYC, 계약서 검토\n'
+    +'- 이광호 프로: Tax DD, TP(투목전환), 임대등록, document 관리\n'
+    +'- 오정희 프로: IC 자료작성, IM, DD 전반 조율\n\n'
+    +'[주요 마일스톤]\n'
+    +'- 4/24: 1차 IC LOI | 4/28: MOU 연장 | 5/22: 2차 IC | 5/28: SPA 체결 | 6/30: 3차 IC LOC | 8/30: 준공/CLOSING\n\n'
+    +'[오늘 마감 태스크]\n'+(todayTasks||'없음')+'\n\n'
+    +'[전체 태스크 현황]\n'+taskSummary
+    +(wikiContext?'\n\n[Wiki 정리 내용]\n'+wikiContext:'')
+    +(mailContext?'\n\n[메일 원문 (출처 참조용)]\n'+mailContext:'')
+    +mailRefList
+    +'\n\n========================\n'
+    +'[답변 지침 - 반드시 준수]\n'
+    +'1. 메일 내용을 근거로 답변할 때는 반드시 해당 출처를 명시해줘.\n'
+    +'   형식: "(→ [출처-N]: YYYY-MM-DD, 제목)"\n'
+    +'   예시: "법률실사 범위에서 재무항목은 제외됩니다. (→ [출처-1]: 2026-04-21, 법률실사 확인 요청 건)"\n'
+    +'2. Wiki 정리 내용 기반 시: "(→ Wiki: DD > 법률실사)"\n'
+    +'3. 태스크 현황 기반 시: "(→ 태스크 현황)"\n'
+    +'4. 출처 없는 일반 지식으로 답변 시: "(→ 일반 실무 지식)"\n'
+    +'5. 답변은 실무적이고 구체적으로, 한국어로.\n'
+    +'6. 여러 출처가 있으면 모두 나열해줘.';
+
+  try{
+    const reply=await callAI(chatHistory.map(m=>({role:m.role,content:m.content})),systemPrompt,1500);
+    chatHistory.push({role:'assistant',content:reply});
+  }catch(e){
+    chatHistory.push({role:'assistant',content:'오류가 발생했어요: '+e.message});
+  }
+  chatLoading=false;
+  render();
+  setTimeout(()=>{const el=document.getElementById('chat-messages');if(el)el.scrollTop=el.scrollHeight;},50);
+}
+
+// ─── TASK DETAIL ───
+// ─── 서류 저장소 ───
+let uploadedDocuments={};  // {id: {name, content, type, uploadedAt}}
+
+function getDocumentsContext(){
+  var docs=Object.values(uploadedDocuments);
+  if(docs.length===0) return '';
+  var sep='\n\n' + '='.repeat(20) + '\n';
+  var ctx=sep+'[업로드된 프로젝트 서류 - 아래 내용을 반드시 참조하여 답변]\n';
+  docs.forEach(function(d){
+    ctx+='\n[서류명: '+d.name+']\n'+d.content+'\n';
+  });
+  return ctx;
+}
+
+function uploadDocument(file){
+  if(!file) return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var content=e.target.result;
+    var id='doc_'+Date.now();
+    uploadedDocuments[id]={id:id,name:file.name,content:content,type:file.type,uploadedAt:new Date().toISOString()};
+    // Firebase에도 저장 (텍스트만, 5MB 제한)
+    if(db && content.length<200000){
+      db.ref('documents/'+id).set({id:id,name:file.name,content:content,uploadedAt:uploadedDocuments[id].uploadedAt});
+    }
+    render();
+    alert('📄 "'+file.name+'" 업로드 완료! AI 채팅에서 이 서류에 대해 질문할 수 있어요.');
+  };
+  // PDF는 텍스트로 읽기 어려우므로 안내
+  if(file.type==='application/pdf'){
+    reader.readAsText(file);  // PDF는 텍스트 추출이 제한적
+  } else {
+    reader.readAsText(file, 'utf-8');
+  }
+}
+
+function deleteDocument(id){
+  delete uploadedDocuments[id];
+  if(db) db.ref('documents/'+id).remove();
+  render();
+}
+
+let currentDetailTaskId=null,detailEditingName=false;
+let detailContent={};  // taskId → {summary, docs, notes, mails}
+let detailAiLoading=false;
+
+function openTaskDetail(id){detailEditingName=false;
+  currentDetailTaskId=id;
+  state.view='taskdetail';
+  if(!detailContent[id]) detailContent[id]={summary:'',docs:[],notes:'',mails:[]};
+  render();
+}
+
+function renderTaskDetail(){
+  const t=TASKS.find(t=>t.id==currentDetailTaskId);
+  if(!t) return '<div class="empty-state">태스크를 찾을 수 없어요</div>';
+  const d=detailContent[t.id]||{summary:'',docs:[],notes:'',mails:[]};
+  const members=Array.isArray(t.member)?t.member:[t.member];
+  const catStyle=getCatStyle(t.cat);
+  const priCol=getPriColor(t.priority);
+
+  // Firebase에서 상세 데이터 로드
+  if(db&&!d._loaded){
+    d._loaded=true;
+    db.ref('taskdetails/'+t.id).once('value').then(snap=>{
+      const data=snap.val();
+      if(data){detailContent[t.id]={...data,_loaded:true};render();}
+    });
+  }
+
+  return `
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+        <button onclick="showView('tasks')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:4px 8px;border-radius:6px;border:1px solid var(--border)" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='none'">← 목록</button>
+        <span style="color:var(--text3)">|</span>
+        <span class="cat-pill" style="background:${catStyle.bg};color:${catStyle.color};border-color:${catStyle.border}">${t.cat}</span>
+        <span style="font-size:12px;color:${priCol}">${t.priority}</span>
+        <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">${t.due}</span>
+        ${members.map(m=>'<span style="font-size:11px;color:'+(MC[m]||'var(--text2)')+'">'+m+'</span>').join(' - ')}
+        <div style="margin-left:auto;display:flex;gap:8px">
+          ${renderDetailDoneBtn(t)}
+          <button onclick="if(confirm('삭제할까요?')){dbDeleteTask(${t.id});showView('tasks');}" style="font-size:12px;padding:5px 14px;border-radius:7px;border:1px solid var(--border2);background:transparent;color:var(--urgent);cursor:pointer">삭제</button>
+        </div>
+      </div>
+
+      ${renderDetailNameEl(t)}
+
+      <!-- AI 핵심 정리 -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:12px;font-weight:500;color:var(--ic)">AI 핵심 정리</div>
+          <button onclick="generateAiSummary(${t.id})" style="font-size:11px;padding:4px 12px;border-radius:6px;border:1px solid var(--ic-border);background:var(--ic-bg);color:var(--ic);cursor:pointer">${detailAiLoading?'생성 중...':'✨ AI 정리'}</button>
+        </div>
+        ${d.summary
+          ?`<div style="font-size:13px;color:var(--text2);line-height:1.8;white-space:pre-wrap">${d.summary}</div>`
+          :`<div style="font-size:12px;color:var(--text3);font-style:italic">AI 정리 버튼을 누르면 이 업무의 핵심 내용, 필요 서류, 주의사항을 정리해줘요</div>`}
+      </div>
+
+      <!-- 체크리스트 서류/액션 -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:12px;font-weight:500;color:var(--text)">서류 · 액션 체크리스트</div>
+          <button onclick="addDetailDoc(${t.id})" style="font-size:11px;padding:4px 12px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer">+ 추가</button>
+        </div>
+        ${(d.docs||[]).length===0
+          ?`<div style="font-size:12px;color:var(--text3);font-style:italic">+ 추가 버튼으로 서류/액션 항목을 추가하세요</div>`
+          :`<div style="display:flex;flex-direction:column;gap:5px">
+            ${d.docs.map((doc,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface2);border-radius:7px">
+              <div style="width:14px;height:14px;border-radius:3px;border:1.5px solid ${doc.done?'var(--done)':'var(--border2)'};background:${doc.done?'var(--done)':'transparent'};cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center" onclick="toggleDetailDoc(${t.id},${i})">
+                ${doc.done?'<div style="width:3px;height:6px;border:1.5px solid #0f0f11;border-top:none;border-left:none;transform:rotate(45deg) translateY(-1px)"></div>':''}
+              </div>
+              <span style="flex:1;font-size:12px;color:${doc.done?'var(--text3)':'var(--text)'};${doc.done?'text-decoration:line-through':''}">${doc.text}</span>
+              <button onclick="deleteDetailDoc(${t.id},${i})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px">×</button>
+            </div>`).join('')}
+          </div>`}
+      </div>
+
+      <!-- 메일 내용 추가 -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:12px;font-weight:500;color:var(--text)">관련 메일 · 내용</div>
+          <button onclick="addDetailMail(${t.id})" style="font-size:11px;padding:4px 12px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer">+ 메일 추가</button>
+        </div>
+        ${(d.mails||[]).length===0
+          ?`<div style="font-size:12px;color:var(--text3);font-style:italic">관련 메일 내용을 추가하면 AI가 핵심만 요약해줘요</div>`
+          :`<div style="display:flex;flex-direction:column;gap:8px">
+            ${d.mails.map((mail,i)=>`<div style="padding:10px 12px;background:var(--surface2);border-radius:8px;border-left:3px solid var(--ic)">
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                <span style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace">${mail.date||''}</span>
+                <button onclick="deleteDetailMail(${t.id},${i})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px">×</button>
+              </div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.6;white-space:pre-wrap">${mail.content}</div>
+            </div>`).join('')}
+          </div>`}
+      </div>
+
+      <!-- 메모 -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+        <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:8px">메모</div>
+        <textarea placeholder="자유롭게 메모하세요..." onblur="saveDetailNotes(${t.id},this.value)" style="width:100%;background:transparent;border:none;color:var(--text);font-size:12px;font-family:'Noto Sans KR',sans-serif;outline:none;resize:none;min-height:80px;line-height:1.6">${d.notes||''}</textarea>
+      </div>
+    </div>
+  `;
+}
+
+// ─── TASK DETAIL 조작 함수 ───
+function saveDetailToDb(taskId){
+  if(!db) return;
+  const d=detailContent[taskId];
+  if(!d) return;
+  db.ref('taskdetails/'+taskId).set({
+    summary:d.summary||'',
+    docs:d.docs||[],
+    notes:d.notes||'',
+    mails:d.mails||[]
+  });
+}
+
+function addDetailDoc(taskId){
+  const text=prompt('서류 또는 액션 항목을 입력하세요');
+  if(!text||!text.trim()) return;
+  if(!detailContent[taskId]) detailContent[taskId]={summary:'',docs:[],notes:'',mails:[]};
+  detailContent[taskId].docs.push({text:text.trim(),done:false});
+  saveDetailToDb(taskId);render();
+}
+function toggleDetailDoc(taskId,idx){
+  detailContent[taskId].docs[idx].done=!detailContent[taskId].docs[idx].done;
+  saveDetailToDb(taskId);render();
+}
+function deleteDetailDoc(taskId,idx){
+  detailContent[taskId].docs.splice(idx,1);
+  saveDetailToDb(taskId);render();
+}
+function saveDetailNotes(taskId,val){
+  if(!detailContent[taskId]) detailContent[taskId]={summary:'',docs:[],notes:'',mails:[]};
+  detailContent[taskId].notes=val;
+  saveDetailToDb(taskId);
+}
+function addDetailMail(taskId){
+  const content=prompt('메일 내용을 붙여넣으세요');
+  if(!content||!content.trim()) return;
+  if(!detailContent[taskId]) detailContent[taskId]={summary:'',docs:[],notes:'',mails:[]};
+  detailContent[taskId].mails.push({content:content.trim(),date:TODAY});
+  saveDetailToDb(taskId);render();
+}
+function deleteDetailMail(taskId,idx){
+  detailContent[taskId].mails.splice(idx,1);
+  saveDetailToDb(taskId);render();
+}
+
+async function generateAiSummary(taskId){
+  const t=TASKS.find(t=>t.id==taskId);
+  if(!t) return;
+  const key=getApiKey();
+  if(!key){alert('OpenAI API Key를 먼저 설정해주세요');openApiKeyModal();return;}
+  detailAiLoading=true;render();
+
+  const d=detailContent[taskId]||{};
+  const mailContext=(d.mails||[]).map(m=>m.content).join('\n\n---\n\n');
+  const members=Array.isArray(t.member)?t.member:[t.member];
+
+  const prompt='당신은 부동산 PF 펀드 딜 전문가입니다.\n\n'
+    +'프로젝트: 더 시우 (IGIS X)\n'
+    +'업무: '+t.name+'\n'
+    +'범주: '+t.cat+'\n'
+    +'담당: '+members.join(', ')+'\n'
+    +'기한: '+t.due+'\n'
+    +'오늘: '+TODAY+'\n\n'
+    +(mailContext?'[관련 메일 내용]\n'+mailContext+'\n\n':'')
+    +'위 업무에 대해 다음을 정리해줘:\n'
+    +'1. 업무 핵심 요약 (2~3줄)\n'
+    +'2. 필요 서류 목록\n'
+    +'3. 주요 체크포인트 / 주의사항\n'
+    +'4. '+(mailContext?'메일 내용 핵심 요약':'일반적인 진행 절차')+'\n\n'
+    +'실무적이고 구체적으로, 한국어로 답해줘.';
+
+  try{
+    const summaryText=await callAI([{role:'user',content:prompt}],null,1200);
+    if(!detailContent[taskId]) detailContent[taskId]={summary:'',docs:[],notes:'',mails:[]};
+    detailContent[taskId].summary=summaryText;
+    saveDetailToDb(taskId);
+  }catch(e){
+    alert('AI 정리 오류: '+e.message);
+  }
+  detailAiLoading=false;render();
+}
+function setMemberFilter(m){state.member=m||null;state.view='tasks';render()}
+function setPeriod(p){state.period=p;render()}
+
+function toggleTask(id){
+  const t=TASKS.find(t=>t.id==id);
+  if(!t) return;
+  t.status=t.status==='Done'?'Not started':'Done';
+  dbSetTask(t);
+}
+function deleteTask(id){
+  if(!confirm('이 태스크를 삭제할까요?')) return;
+  dbDeleteTask(id);
+}
+function startEditDue(id){editingDueId=id;render();setTimeout(()=>{const i=document.querySelector('.date-input-inline');if(i)i.focus();},50)}
+function updateDue(id,val){
+  const t=TASKS.find(t=>t.id==id);
+  if(t&&val){t.due=val;dbSetTask(t);}
+  editingDueId=null;render();
+}
+function cancelEditDue(){setTimeout(()=>{editingDueId=null;render();},200)}
+function handleNameKey(e,id){if(e.key==='Enter')e.target.blur();if(e.key==='Escape'){editingNameId=null;render();}}
+function startNameEdit(id,e){e.stopPropagation();editingNameId=id;render();setTimeout(function(){var i=document.getElementById('tni'+id);if(i){i.focus();i.select();}},50);}
+function saveTaskName(id,val){var t=TASKS.find(function(t){return t.id==id;});if(t&&val&&val.trim()){t.name=val.trim();dbSetTask(t);}editingNameId=null;render();}
+function handleDetailNameKey(e,id){if(e.key==='Enter')e.target.blur();if(e.key==='Escape'){detailEditingName=false;render();}}
+function startDetailNameEdit(id){detailEditingName=true;render();setTimeout(function(){var i=document.getElementById('detail-name-input');if(i){i.focus();i.select();}},50);}
+function saveDetailName(id,val){var t=TASKS.find(function(t){return t.id==id;});if(t&&val&&val.trim()){t.name=val.trim();dbSetTask(t);}detailEditingName=false;render();}
+
+function startMemberEdit(id){editingMemberId=id;render();}
+function closeMemberEdit(){editingMemberId=null;render();}
+function updateMember(id){
+  const t=TASKS.find(t=>t.id==id);
+  if(!t) return;
+  const checkboxes=document.querySelectorAll(`.task-row input[type=checkbox]`);
+  const checked=Array.from(checkboxes).filter(cb=>cb.checked).map(cb=>cb.value);
+  if(checked.length===0){alert('담당자를 1명 이상 선택해주세요');return;}
+  t.member=checked;
+  dbSetTask(t);
+}
+
+function toggleCheck(id){
+  const c=CHECKLIST.find(c=>c.id===id);
+  if(!c) return;
+  c.done=!c.done;
+  dbSetCheck(c);
+}
+function deleteCheck(id){
+  if(!confirm('이 항목을 삭제할까요?')) return;
+  dbDeleteCheck(id);
+}
+function startCheckEdit(id){
+  editingCheckId=id;
+  render();
+  setTimeout(()=>{
+    const inp=document.getElementById('check-edit-'+id);
+    if(inp){inp.focus();inp.select();}
+  },50);
+}
+function saveCheckEdit(id){
+  const inp=document.getElementById('check-edit-'+id);
+  if(!inp) return;
+  const text=inp.value.trim();
+  if(text){
+    const c=CHECKLIST.find(c=>c.id===id);
+    if(c){c.text=text;dbSetCheck(c);}
+  }
+  editingCheckId=null;
+  render();
+}
+function cancelCheckEdit(){
+  editingCheckId=null;
+  render();
+}
+
+// ─── MILESTONE EDIT ───
+function startMsEdit(id){editingMsId=id;render();}
+function cancelMsEdit(){editingMsId=null;render();}
+function saveMsDate(id,val){
+  const m=MILESTONES_DATA.find(m=>m.id===id);
+  if(m&&val){m.dateStr=val;dbSetMilestone(m);}
+}
+function saveMsLabel(id,val){
+  const m=MILESTONES_DATA.find(m=>m.id===id);
+  if(m&&val.trim()){m.label=val.trim();dbSetMilestone(m);}
+  editingMsId=null;render();
+}
+function saveMsDetail(id,val){
+  const m=MILESTONES_DATA.find(m=>m.id===id);
+  if(m){m.detail=val.trim();dbSetMilestone(m);}
+  editingMsId=null;render();
+}
+function deleteMilestone(id){
+  if(!confirm('이 마일스톤을 삭제할까요?'))return;
+  dbDeleteMilestone(id);editingMsId=null;
+}
+
+// ─── PHASE ITEM EDIT ───
+function startPhaseEdit(cat,idx){editingPhase=cat;editingPhaseIdx=idx;render();setTimeout(()=>{const inp=document.querySelector('.phase-card input');if(inp){inp.focus();inp.select();}},50);}
+function cancelPhaseEdit(){editingPhase=null;editingPhaseIdx=null;render();}
+
+// ─── CAT / PRIORITY MODAL ───
+function openCatPriModal(){
+  renderCatManage();
+  renderPriManage();
+  document.getElementById('catpri-modal').classList.add('open');
+}
+function closeCatPriModal(){document.getElementById('catpri-modal').classList.remove('open');}
+
+function renderCatManage(){
+  const cats=CATS.length>0?CATS:[{id:0,name:'IC'},{id:1,name:'DD'},{id:2,name:'TP'}];
+  document.getElementById('cat-manage-list').innerHTML=cats.map((c,i)=>`
+    <div style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--surface2);border-radius:6px">
+      <div style="width:8px;height:8px;border-radius:50%;background:${CAT_PALETTE[i%CAT_PALETTE.length].color};flex-shrink:0"></div>
+      <input value="${c.name}" onblur="saveCatName(${c.id},this.value)" onkeydown="if(event.key==='Enter')this.blur()"
+        style="flex:1;background:transparent;border:none;border-bottom:1px solid var(--border2);color:var(--text);font-size:12px;outline:none;padding:1px 2px;min-width:0" />
+      <button onclick="deleteCat(${c.id})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;flex-shrink:0" title="삭제">×</button>
+    </div>`).join('');
+}
+function renderPriManage(){
+  const pris=PRIORITIES.length>0?PRIORITIES:DEFAULT_PRIORITIES.map((p,i)=>({id:i,name:p}));
+  document.getElementById('pri-manage-list').innerHTML=pris.map(p=>`
+    <div style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--surface2);border-radius:6px">
+      <input value="${p.name}" onblur="savePriName(${p.id},this.value)" onkeydown="if(event.key==='Enter')this.blur()"
+        style="flex:1;background:transparent;border:none;border-bottom:1px solid var(--border2);color:${getPriColor(p.name)};font-size:12px;outline:none;padding:1px 2px;min-width:0" />
+      <button onclick="deletePriority(${p.id})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;flex-shrink:0">×</button>
+    </div>`).join('');
+}
+function saveCatName(id,val){if(!val.trim())return;const c=CATS.find(c=>c.id===id);if(c){c.name=val.trim();dbSetCat(c);}renderCatManage();}
+function deleteCat(id){if(!confirm('이 범주를 삭제할까요?'))return;dbDeleteCat(id);}
+function addCat(){const name=prompt('새 범주 이름을 입력하세요');if(name&&name.trim()){dbAddCat(name);setTimeout(renderCatManage,500);}}
+function savePriName(id,val){if(!val.trim())return;const p=PRIORITIES.find(p=>p.id===id);if(p){p.name=val.trim();dbSetPriority(p);}renderPriManage();}
+function deletePriority(id){if(!confirm('이 중요도를 삭제할까요?'))return;dbDeletePriority(id);}
+function addPriority(){const name=prompt('새 중요도 이름을 입력하세요');if(name&&name.trim()){dbAddPriority(name);setTimeout(renderPriManage,500);}}
+
+// ─── INLINE DROPDOWN (범주/중요도 변경) ───
+let dropdownTarget=null;
+function startCatEdit(taskId,e){
+  e.stopPropagation();
+  const cats=CATS.length>0?CATS:[{name:'IC'},{name:'DD'},{name:'TP'}];
+  showDropdown(e,cats.map(c=>{
+    const st=getCatStyle(c.name);
+    return `<div onclick="updateTaskCat(${taskId},'${c.name}')" style="padding:5px 10px;cursor:pointer;font-size:12px;border-radius:5px;color:${st.color};background:${st.bg};margin-bottom:2px;transition:opacity 0.1s" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">${c.name}</div>`;
+  }).join(''));
+}
+function startPriEdit(taskId,e){
+  e.stopPropagation();
+  const pris=PRIORITIES.length>0?PRIORITIES:DEFAULT_PRIORITIES.map((p,i)=>({id:i,name:p}));
+  showDropdown(e,pris.map(p=>`<div onclick="updateTaskPri(${taskId},'${p.name}')" style="padding:5px 10px;cursor:pointer;font-size:12px;border-radius:5px;color:${getPriColor(p.name)};background:${getPriBg(p.name)};margin-bottom:2px" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">${p.name}</div>`).join(''));
+}
+function showDropdown(e,html){
+  const dd=document.getElementById('inline-dropdown');
+  dd.innerHTML=html;
+  dd.style.display='block';
+  const r=e.target.getBoundingClientRect();
+  dd.style.top=(r.bottom+4)+'px';
+  dd.style.left=r.left+'px';
+  setTimeout(()=>document.addEventListener('click',closeDropdown,{once:true}),50);
+}
+function closeDropdown(){document.getElementById('inline-dropdown').style.display='none';}
+function updateTaskCat(id,cat){
+  const t=TASKS.find(t=>t.id==id);
+  if(t){t.cat=cat;dbSetTask(t);}
+  closeDropdown();
+}
+function updateTaskPri(id,pri){
+  const t=TASKS.find(t=>t.id==id);
+  if(t){t.priority=pri;dbSetTask(t);}
+  closeDropdown();
+}
+function savePhaseItem(cat,idx,val){
+  if(val.trim()){
+    const item=(PHASE_DATA[cat]||[]).find(i=>i.id===idx);
+    if(item){item.text=val.trim();dbSetPhaseItem(cat,item);}
+  }
+  editingPhase=null;editingPhaseIdx=null;render();
+}
+function deletePhaseItem(cat,idx){
+  if(!confirm('이 항목을 삭제할까요?'))return;
+  dbDeletePhaseItem(cat,idx);editingPhase=null;editingPhaseIdx=null;
+}
+function addPhaseItem(cat){
+  const text=prompt(cat+' 단계 새 항목 이름을 입력하세요');
+  if(text&&text.trim()) dbAddPhaseItem(cat,text.trim());
+}
+
+function openTaskModal(){
+  document.getElementById('f-name').value='';
+  document.getElementById('f-due').value=TODAY;
+  document.querySelectorAll('#f-member input[type=checkbox]').forEach(cb=>cb.checked=false);
+  // 범주 옵션 동적 생성
+  const catSel=document.getElementById('f-cat');
+  const cats=CATS.length>0?CATS:[{name:'IC'},{name:'DD'},{name:'TP'}];
+  catSel.innerHTML=cats.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
+  // 중요도 옵션 동적 생성
+  const priSel=document.getElementById('f-priority');
+  const pris=PRIORITIES.length>0?PRIORITIES:DEFAULT_PRIORITIES.map((p,i)=>({id:i,name:p}));
+  priSel.innerHTML=pris.map(p=>`<option value="${p.name}">${p.name}</option>`).join('');
+  document.getElementById('task-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('f-name').focus(),100);
+}
+function openCheckModal(){document.getElementById('f-check').value='';document.getElementById('check-modal').classList.add('open');setTimeout(()=>document.getElementById('f-check').focus(),100)}
+function closeModal(){document.querySelectorAll('.modal-bg').forEach(m=>m.classList.remove('open'))}
+
+// ─── API KEY ───
+let _cachedApiKey='';
+function getApiKey(){return _cachedApiKey||localStorage.getItem('igis_openai_key')||'';}
+
+// OpenAI API 호출 헬퍼
+async function callAI(messages, systemPrompt, maxTokens){
+  var rawKey=getApiKey();
+  if(!rawKey) throw new Error('API Key가 없어요. 사이드바에서 OpenAI API Key를 설정해주세요.');
+  // key에서 비 ASCII 문자 완전 제거 (개행, 공백, 특수문자 등)
+  var key=rawKey.replace(/[^\x20-\x7E]/g,'').trim();
+  if(!key) throw new Error('API Key가 유효하지 않아요. 다시 설정해주세요.');
+
+  // systemPrompt에서 비 ASCII 특수문자 제거
+  var safePrompt=(systemPrompt||'').replace(/[\u2500-\u257F]/g,'=').replace(/[\u3010\u3011]/g,'');
+  var docsCtx=getDocumentsContext();
+  var sysContent=safePrompt+(docsCtx||'');
+  var msgs=sysContent?[{role:'system',content:sysContent},...messages]:messages;
+  var payload={model:'gpt-4o',messages:msgs,max_tokens:maxTokens||1500};
+
+  return new Promise(function(resolve, reject){
+    var xhr=new XMLHttpRequest();
+    xhr.open('POST','https://api.openai.com/v1/chat/completions',true);
+    xhr.setRequestHeader('Authorization','Bearer '+key);
+    xhr.setRequestHeader('Content-Type','application/json');
+    xhr.onreadystatechange=function(){
+      if(xhr.readyState!==4) return;
+      if(xhr.status>=200&&xhr.status<300){
+        try{
+          var data=JSON.parse(xhr.responseText);
+          resolve((data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||'');
+        }catch(e){reject(new Error('응답 파싱 오류: '+e.message));}
+      }else{
+        reject(new Error('API 오류 '+xhr.status+': '+xhr.responseText.slice(0,300)));
+      }
+    };
+    xhr.onerror=function(){reject(new Error('네트워크 오류. 인터넷 연결을 확인해주세요.'));};
+    xhr.send(JSON.stringify(payload));
+  });
+}
+
+function saveApiKey(){
+  const key=document.getElementById('f-apikey').value.trim();
+  if(!key){alert('API Key를 입력해주세요');return;}
+  _cachedApiKey=key;
+  // Firebase + localStorage 둘 다 저장
+  localStorage.setItem('igis_openai_key',key);
+  if(db) db.ref('config/openaiApiKey').set(key);
+  closeApiKeyModal();
+  alert('저장 완료! 팀원 전체가 이 키를 공유해요.');
+}
+
+function openApiKeyModal(){
+  const saved=getApiKey();
+  document.getElementById('f-apikey').value=saved?'(저장됨 — 변경하려면 새로 입력)':'';
+  document.getElementById('apikey-modal').classList.add('open');
+}
+function closeApiKeyModal(){document.getElementById('apikey-modal').classList.remove('open');}
+
+function loadApiKeyFromFirebase(){
+  if(!db) return;
+  db.ref('config/openaiApiKey').once('value').then(snap=>{
+    if(snap.val()){
+      _cachedApiKey=snap.val();
+      localStorage.setItem('igis_openai_key',snap.val());
+    }
+  });
+}
+
+// ─── MAIL PARSING ───
+let parsedTasks=[];
+function openMailModal(){
+  const key=getApiKey();
+  if(!key){
+    if(confirm('OpenAI API Key가 없어요. 지금 설정할까요?')){openApiKeyModal();}
+    return;
+  }
+  document.getElementById('f-mail').value='';
+  document.getElementById('mail-result').style.display='none';
+  document.getElementById('mail-loading').style.display='none';
+  document.getElementById('mail-error').style.display='none';
+  document.getElementById('mail-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('f-mail').focus(),100);
+}
+function closeMailModal(){document.getElementById('mail-modal').classList.remove('open');}
+
+async function parseMail(){
+  const mailText=document.getElementById('f-mail').value.trim();
+  if(!mailText){alert('메일 내용을 입력해주세요');return;}
+  const key=getApiKey();
+  if(!key){alert('OpenAI API Key를 먼저 설정해주세요');openApiKeyModal();return;}
+
+  document.getElementById('mail-loading').style.display='block';
+  document.getElementById('mail-result').style.display='none';
+  document.getElementById('mail-error').style.display='none';
+  document.getElementById('parse-btn').disabled=true;
+
+  const today=TODAY;
+  const existingTasks=TASKS.map(t=>t.name).join(', ');
+  const prompt=`당신은 부동산 부동산 PF 펀드 딜 실무 전문가 프로젝트 매니저야.
+아래 메일을 읽고 다음 두 가지를 해줘.
+
+[팀 정보]
+- 박기범 팀장님: 딜 총괄, IC 의사결정, 대주/김앤장 협의
+- 김준형 프로: Legal DD, SPA, KYC, 계약서 검토
+- 이광호 프로: Tax DD, TP(투목전환), 임대등록, 실사 document
+- 오정희 프로: IC 자료작성, IM, DD 전반 조율, 체크리스트 관리
+
+[업무 범주]
+- IC: 투자위원회 관련 (자료준비, 의사결정, LOI, Commitment)
+- DD: 실사 관련 (Legal/Finance/Tax DD, KYC, SPA, 계약서)
+- TP: 투목전환 관련 (임대등록, 정관변경, 보존등기, 준공)
+
+[오늘 날짜] ${today}
+
+---
+
+[이미 등록된 태스크 (중복 생성 금지)]
+${existingTasks||'없음'}
+
+[할 일 1] 메일에서 직접 언급된 태스크 추출 (이미 등록된 태스크와 중복되면 제외)
+
+[할 일 2] 메일에 투심(IC)/SPA/LOI/준공/클로징 등 주요 일정 날짜가 언급되면:
+  → 반드시 그 일정을 기준으로 역산한 준비 태스크 전체를 생성
+  → IC 투심이면: IM 완성, 재무모델 완성, 법률검토 완료, 자료 팀장 확인, 최종본 제출 등
+  → SPA이면: SPA 초안 검토, 조건 협의, 법무 검토, 서명본 준비 등
+  → 각 태스크마다 담당자, 역산 기한, 우선순위, 어느 일정의 준비인지(group) 명시
+  → 예) "5월 22일 2차 IC" → [IC 자료 초안(오정희, D-7, 높음), 재무모델 완성(박기범, D-5, 긴급), 팀장 검토(박기범, D-3, 긴급), 최종본 완성(오정희, D-1, 긴급)]
+
+반드시 아래 JSON 형식으로만 답해. 마크다운 없이 순수 JSON 배열만:
+[
+  {
+    "name": "구체적인 태스크명 (서류명/액션 명확히)",
+    "member": ["담당자명"],
+    "cat": "IC 또는 DD 또는 TP",
+    "due": "YYYY-MM-DD",
+    "priority": "긴급 또는 높음 또는 보통",
+    "reason": "기한 설정 근거 (예: 2차IC D-3, 메일 명시, 역산 등)",
+    "group": "메일에서 언급된 일정명 또는 '직접언급' (그룹핑용)",
+    "milestone": "연관된 마일스톤 날짜 YYYY-MM-DD (없으면 null)"
+  }
+]
+
+기한 판단 기준:
+- 메일에 날짜 명시 → 그 날짜 사용
+- "오늘/즉시/바로" → ${today}
+- "이번 주" → 이번 주 금요일
+- "다음 주" → 다음 주 금요일
+- 기한 불명확 → 오늘+3일
+- 주요 일정 역산 시: 최종 완료 D-1, 검토 D-3, 초안 D-5, 착수 D-10 기준 적용
+
+메일 내용:
+${mailText}`;
+
+  try{
+    const rawText=await callAI([{role:'user',content:prompt}],null,2000);
+    const jsonStr=rawText.replace(/^```json\n?|^```\n?|```$/gm,'').trim();
+    parsedTasks=JSON.parse(jsonStr);
+    renderParsedTasks();
+  }catch(e){
+    document.getElementById('mail-error').style.display='block';
+    document.getElementById('mail-error').textContent='오류: '+e.message;
+  }finally{
+    document.getElementById('mail-loading').style.display='none';
+    document.getElementById('parse-btn').disabled=false;
+  }
+}
+
+function renderParsedTasks(){
+  if(!parsedTasks||parsedTasks.length===0){
+    document.getElementById('mail-error').style.display='block';
+    document.getElementById('mail-error').textContent='추출된 태스크가 없어요. 메일 내용을 확인해주세요.';
+    return;
+  }
+
+  // group별로 묶기
+  const groups={};
+  parsedTasks.forEach((t,i)=>{
+    const g=t.group||'직접언급';
+    if(!groups[g]) groups[g]=[];
+    groups[g].push({...t,_idx:i});
+  });
+
+  const list=document.getElementById('mail-task-list');
+  let html='';
+
+  // 전체 선택/해제 버튼
+  html+=`<div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+    <button onclick="selectAllParsed(true)" style="font-size:10px;padding:3px 10px;border-radius:99px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer">전체 선택</button>
+    <button onclick="selectAllParsed(false)" style="font-size:10px;padding:3px 10px;border-radius:99px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer">전체 해제</button>
+    <span style="font-size:10px;color:var(--text3)">${parsedTasks.length}개 추출됨</span>
+  </div>`;
+
+  Object.entries(groups).forEach(([groupName, tasks])=>{
+    const isSchedule=groupName!=='직접언급';
+    const groupColor=isSchedule?'var(--ic)':'var(--text3)';
+    html+=`<div style="margin-bottom:10px">
+      <div style="font-size:10px;font-weight:500;color:${groupColor};padding:4px 8px;background:${isSchedule?'var(--ic-bg)':'var(--surface)'};border-radius:5px;margin-bottom:5px;letter-spacing:0.05em">
+        ${isSchedule?'📅 ':'📋 '}${groupName} (${tasks.length}개)
+      </div>`;
+    tasks.forEach(t=>{
+      const i=t._idx;
+      const members=Array.isArray(t.member)?t.member:[t.member];
+      const catColor={IC:'var(--ic)',DD:'var(--dd)',TP:'var(--tp)'}[t.cat]||'var(--text3)';
+      const priColor={긴급:'var(--urgent)',높음:'var(--high)',보통:'var(--text3)'}[t.priority]||'var(--text3)';
+      html+=`<div style="display:flex;align-items:flex-start;gap:9px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;margin-bottom:4px">
+        <input type="checkbox" id="pt${i}" checked style="accent-color:var(--accent);margin-top:3px;flex-shrink:0">
+        <div style="flex:1;min-width:0">
+          <label for="pt${i}" style="font-size:12px;color:var(--text);cursor:pointer;display:block;margin-bottom:3px">${t.name}</label>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+            <span style="font-size:10px;color:${catColor};background:${catColor}22;padding:1px 6px;border-radius:99px">${t.cat}</span>
+            <span style="font-size:10px;color:${priColor};font-weight:500">${t.priority}</span>
+            <span style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace">${t.due}</span>
+            <span style="font-size:10px;color:var(--text2)">${members.map(m=>m.replace(' 팀장님','').replace(' 프로','')).join(', ')}</span>
+          </div>
+          ${t.reason?`<div style="font-size:10px;color:var(--text3);margin-top:2px;font-style:italic">${t.reason}</div>`:''}
+        </div>
+      </div>`;
+    });
+    html+='</div>';
+  });
+
+  list.innerHTML=html;
+  document.getElementById('mail-result').style.display='block';
+}
+
+function selectAllParsed(checked){
+  parsedTasks.forEach((_,i)=>{
+    const cb=document.getElementById('pt'+i);
+    if(cb) cb.checked=checked;
+  });
+}
+
+function addSelectedTasks(){
+  const selected=parsedTasks.filter((_,i)=>{
+    const cb=document.getElementById('pt'+i);
+    return cb&&cb.checked;
+  });
+  if(selected.length===0){alert('추가할 태스크를 선택해주세요');return;}
+  selected.forEach(t=>{
+    const id=nextTaskId++;
+    const members=Array.isArray(t.member)?t.member:[t.member];
+    const task={
+      id,name:t.name,member:members,
+      cat:t.cat||'IC',due:t.due||TODAY,
+      priority:t.priority||'보통',status:'Not started',
+      group:t.group||null,
+      milestone:t.milestone||null,
+      reason:t.reason||null
+    };
+    dbSetTask(task);
+  });
+  dbSetNextId(nextTaskId);
+  closeMailModal();
+  showView('dashboard');
+  setTimeout(()=>alert(selected.length+'개 태스크가 추가됐어요! 대시보드에서 확인하세요.'),100);
+}
+
+function submitTask(){
+  const name=document.getElementById('f-name').value.trim();
+  if(!name) return;
+  const id=nextTaskId++;
+  const memberChecks=document.querySelectorAll('#f-member input[type=checkbox]:checked');
+  const members=Array.from(memberChecks).map(cb=>cb.value);
+  if(members.length===0){alert('담당자를 1명 이상 선택해주세요');return;}
+  const task={id,name,member:members,cat:document.getElementById('f-cat').value,due:document.getElementById('f-due').value||TODAY,priority:document.getElementById('f-priority').value,status:'Not started'};
+  dbSetTask(task);
+  dbSetNextId(nextTaskId);
+  closeModal();
+}
+function submitCheck(){
+  const text=document.getElementById('f-check').value.trim();
+  if(!text) return;
+  const item={id:'c'+Date.now(),text,done:false};
+  dbSetCheck(item);
+  closeModal();
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape')closeModal();
+  if(e.key==='Enter'){if(document.getElementById('task-modal').classList.contains('open'))submitTask();if(document.getElementById('check-modal').classList.contains('open'))submitCheck();}
+});
+document.querySelectorAll('.modal-bg').forEach(bg=>bg.addEventListener('click',e=>{if(e.target===bg)closeModal()}));
+
+// ─── BOOT ───
+document.getElementById('header-date').textContent=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
+
+initFirebase(FIREBASE_CONFIG);
+</script>
+</body>
+</html>
