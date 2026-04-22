@@ -428,11 +428,11 @@ function formatDate(d){if(!d)return '';const p=d.split('-');return p[1].replace(
 
 const DEFAULT_MILESTONES=[
   {dateStr:'2026-04-21',label:'선행결정',detail:'Operator 선정\nBudget 확정'},
-  {dateStr:'2026-04-24',label:'1차 IC LOI',detail:'1차 IC LOI\n(목표)'},
+  {dateStr:'2026-04-24',label:'1차 IC LOI 수취',detail:'1차 IC LOI\n(목표)'},
   {dateStr:'2026-04-28',label:'MOU 연장',detail:'TIC·FINANCING\n조건 확정\nDD 결과'},
   {dateStr:'2026-05-22',label:'2차 IC',detail:'2차 IC COMMIT\nOperator 마케팅'},
   {dateStr:'2026-05-28',label:'SPA 체결',detail:'대주 IC 협의\n기존 대주 동의'},
-  {dateStr:'2026-06-30',label:'3차 IC LOC',detail:'Legal Confirm\nSPC 이사회\n거래등기'},
+  {dateStr:'2026-06-30',label:'3차 IC LOC 수취',detail:'Legal Confirm\nSPC 이사회\n거래등기'},
   {dateStr:'2026-08-30',label:'준공/CLOSING',detail:'보존등기\n임대사업자 등록\n투목등기 완료'},
 ];
 
@@ -446,9 +446,9 @@ const DEFAULT_TASKS=[
   // ══════════════════════════════════════════════════
   // IC | 내부심사
   // ══════════════════════════════════════════════════
-  {id:1,name:'1차 IC LOI 작성 및 발송',member:['김준형 프로','오정희 프로'],cat:'IC',due:'2026-04-24',priority:'긴급',status:'Not started'},
-  {id:2,name:'2차 IC COMMITMENT 준비 (TIC/FINANCING/Operator/DD결과)',member:['김준형 프로','오정희 프로'],cat:'IC',due:'2026-05-22',priority:'높음',status:'Not started'},
-  {id:3,name:'3차 IC LOC 준비 (대주 IC 완료 후)',member:['김준형 프로','오정희 프로'],cat:'IC',due:'2026-06-30',priority:'보통',status:'Not started'},
+  {id:1,name:'1차 IC LOI 수취 (M&G 발행)',member:['김준형 프로','오정희 프로'],cat:'IC',due:'2026-04-24',priority:'긴급',status:'Not started'},
+  {id:2,name:'2차 IC COMMITMENT 수취 (선행: TIC/FINANCING/Operator/DD결과)',member:['김준형 프로','오정희 프로'],cat:'IC',due:'2026-05-22',priority:'높음',status:'Not started'},
+  {id:3,name:'3차 IC LOC 수취 (선행: 대주 IC 완료)',member:['김준형 프로','오정희 프로'],cat:'IC',due:'2026-06-30',priority:'보통',status:'Not started'},
   {id:4,name:'M&G 상위펀드(회사형) 내부심사',member:['오정희 프로'],cat:'IC',due:'2026-08-21',priority:'보통',status:'Not started'},
   {id:5,name:'IGISX REF(신탁형) 내부심사',member:['오정희 프로'],cat:'IC',due:'2026-08-28',priority:'보통',status:'Not started'},
   // IC | 대출
@@ -480,9 +480,9 @@ const DEFAULT_TASKS=[
   {id:27,name:'PM 계약 체결',member:['박기범 팀장님'],cat:'IC',due:'2026-09-01',priority:'보통',status:'Not started'},
   {id:28,name:'FM 계약 체결',member:['박기범 팀장님'],cat:'IC',due:'2026-09-01',priority:'보통',status:'Not started'},
   // IC | M&G 투자심의
-  {id:29,name:'[M&G] 1차 투자심의',member:['박기범 팀장님'],cat:'IC',due:'2026-04-30',priority:'긴급',status:'Not started'},
-  {id:30,name:'[M&G] 2차 투자심의 COMMITMENT',member:['박기범 팀장님'],cat:'IC',due:'2026-05-22',priority:'높음',status:'Not started'},
-  {id:31,name:'[M&G] 3차 투자심의 LOC',member:['박기범 팀장님'],cat:'IC',due:'2026-06-30',priority:'보통',status:'Not started'},
+  {id:29,name:'[M&G] 1차 IC LOI 수취',member:['박기범 팀장님'],cat:'IC',due:'2026-04-30',priority:'긴급',status:'Not started'},
+  {id:30,name:'[M&G] 2차 IC COMMITMENT 수취',member:['박기범 팀장님'],cat:'IC',due:'2026-05-22',priority:'높음',status:'Not started'},
+  {id:31,name:'[M&G] 3차 IC LOC 수취',member:['박기범 팀장님'],cat:'IC',due:'2026-06-30',priority:'보통',status:'Not started'},
   {id:32,name:'[M&G] Capital Call',member:['박기범 팀장님','오정희 프로'],cat:'IC',due:'2026-08-31',priority:'보통',status:'Not started'},
   {id:33,name:'금융감독원 보고',member:['오정희 프로'],cat:'IC',due:'2026-09-05',priority:'보통',status:'Not started'},
   // ══════════════════════════════════════════════════
@@ -1907,20 +1907,19 @@ function renderChat(){
       .replace(/\(→ 일반 실무 지식[^)]*\)/g,'<span style="display:inline-block;font-size:10px;padding:1px 7px;border-radius:99px;background:var(--surface2);color:var(--text3);margin:0 2px">$&</span>');
     // 서류 패널 생성
   var docList2=Object.values(uploadedDocuments);
-  var docsPanel='<div style="margin-bottom:16px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.05)">'
-    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+  var docsPanel='<div style="margin-bottom:16px;padding:16px 18px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.05)">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
     +'<span style="font-size:13px;font-weight:700;color:var(--text)">참조 서류</span>'
     +'<label style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:8px;background:var(--accent);color:#fff;cursor:pointer;font-size:12px;font-weight:600">'
     +'+ 서류 업로드'
     +'<input type="file" accept=".txt,.md,.csv,.json,.html" style="display:none" onchange="uploadDocument(this.files[0])">'
     +'</label></div>'
     +(docList2.length===0
-      ?'<div style="font-size:12px;color:var(--text3);line-height:1.8;padding:4px 0">'
-      +'<p style="margin:0 0 6px 0">MOU, SPA 초안 등 <b>텍스트 파일</b>을 업로드하면 AI가 내용을 직접 읽고 답변해요.</p>'
-      +'<p style="margin:0 0 4px 0;color:var(--urgent);font-weight:600">⚠ PDF 업로드는 지원되지 않아요</p>'
-      +'<p style="margin:0 0 6px 0;color:var(--text2)">이 대시보드는 <b>Claude AI 챗봇</b> 기반으로 작동하는데, 브라우저 보안 정책상 PDF 바이너리 파일을 직접 읽을 수 없어요. MOU, SPA 초안 등은 <b>.txt 또는 .md</b> 형식으로 변환해서 올려주세요.</p>'
-      +'<p style="margin:0;color:var(--text3)">지원 형식: .txt .md .html .csv .json &nbsp;|&nbsp; 최대 크기: 5MB</p>'
-      +'</div>'
+      ?'<div style="font-size:12px;line-height:1.8;color:var(--text3)">'
+        +'<p style="margin:0 0 5px 0;color:var(--text2)">MOU, SPA 초안 등 <b>텍스트 파일</b>을 업로드하면 AI가 내용을 직접 읽고 답변해요.</p>'
+        +'<p style="margin:0 0 5px 0"><span style="color:var(--urgent);font-weight:700">⚠ PDF는 지원 안 돼요</span> — 이 대시보드는 <b>Claude AI 챗봇</b> 기반이라 브라우저 보안 정책상 PDF를 직접 읽을 수 없어요. <b>.txt / .md</b> 형식으로 변환해서 올려주세요.</p>'
+        +'<p style="margin:0;color:var(--text3)">지원 형식: .txt .md .html .csv .json &nbsp;|&nbsp; 최대 크기: 5MB</p>'
+        +'</div>'
       :'<div style="display:flex;flex-wrap:wrap;gap:8px">'
         +docList2.map(function(d){
           var dname=d.name;var did=d.id;
@@ -2056,7 +2055,7 @@ async function sendChat(overrideMsg){
     +'- 이광호 프로: Tax DD, TP(투목전환), 임대등록, document 관리\n'
     +'- 오정희 프로: IC 자료작성, IM, DD 전반 조율\n\n'
     +'[주요 마일스톤]\n'
-    +'- 4/24: 1차 IC LOI | 4/28: MOU 연장 | 5/22: 2차 IC | 5/28: SPA 체결 | 6/30: 3차 IC LOC | 8/30: 준공/CLOSING\n\n'
+    +'- 4/24: 1차 IC LOI 수취 | 4/28: MOU 연장 | 5/22: 2차 IC COMMITMENT 수취 | 5/28: SPA 체결 | 6/30: 3차 IC LOC 수취 | 8/30: 준공/CLOSING\n\n'
     +'[오늘 마감 태스크]\n'+(todayTasks||'없음')+'\n\n'
     +'[전체 태스크 현황]\n'+taskSummary
     +(wikiContext?'\n\n[Wiki 정리 내용]\n'+wikiContext:'')
@@ -2071,11 +2070,26 @@ async function sendChat(overrideMsg){
     +'3. 태스크 현황 기반 시: "(→ 태스크 현황)"\n'
     +'4. 출처 없는 일반 지식으로 답변 시: "(→ 일반 실무 지식)"\n'
     +'5. 답변은 실무적이고 구체적으로, 한국어로.\n'
-    +'6. 여러 출처가 있으면 모두 나열해줘.';
+    +'6. 여러 출처가 있으면 모두 나열해줘.\n'
+    +'\n[데이터 수정 기능]\n'
+    +'사용자가 태스크나 일정을 수정해달라고 요청하면, 답변 맨 끝에 아래 형식의 JSON 블록을 추가해줘.\n'
+    +'절대 JSON 블록 없이 수정 요청을 처리하지 마. 반드시 아래 형식으로 끝내야 해:\n'
+    +'```json\n'
+    +'{"action":"update_task","id":1,"field":"status","value":"Done"}\n'
+    +'```\n'
+    +'가능한 action 종류:\n'
+    +'- update_task: {"action":"update_task","id":숫자,"field":"필드명","value":"값"} // field: status/due/priority/name/member\n'
+    +'- update_schedule: {"action":"update_schedule","id":"s1","field":"필드명","value":"값"} // field: confirmedDate/draftDate/status/members\n'
+    +'- complete_task: {"action":"complete_task","id":숫자} // 태스크 완료 처리\n'
+    +'수정 요청이 아니면 JSON 블록을 절대 포함하지 마.';
 
   try{
     const reply=await callAI(chatHistory.map(m=>({role:m.role,content:m.content})),systemPrompt,1500);
-    chatHistory.push({role:'assistant',content:reply});
+    // AI 수정 명령 파싱 및 실행
+    const actionResult = await parseAndExecuteAIAction(reply);
+    const displayReply = reply.replace(/```json[\s\S]*?```/g, '').trim()
+      + (actionResult ? '\n\n' + actionResult : '');
+    chatHistory.push({role:'assistant',content:displayReply});
   }catch(e){
     chatHistory.push({role:'assistant',content:'오류가 발생했어요: '+e.message});
   }
@@ -2330,6 +2344,57 @@ function updateDue(id,val){
   if(t&&val){t.due=val;dbSetTask(t);}
   editingDueId=null;render();
 }
+async function parseAndExecuteAIAction(reply){
+  // JSON 블록 추출
+  var jsonMatch = reply.match(/```json\s*([\s\S]*?)```/);
+  if(!jsonMatch) return null;
+  var actionStr = jsonMatch[1].trim();
+  var action;
+  try { action = JSON.parse(actionStr); } catch(e) { return null; }
+  if(!action || !action.action) return null;
+
+  try {
+    if(action.action === 'update_task' || action.action === 'complete_task'){
+      var t = TASKS.find(function(t){ return t.id == action.id; });
+      if(!t) return '❌ 태스크 ID ' + action.id + '를 찾을 수 없어요.';
+      if(action.action === 'complete_task'){
+        t.status = 'Done';
+      } else {
+        if(action.field === 'member' && typeof action.value === 'string'){
+          t[action.field] = [action.value];
+        } else {
+          t[action.field] = action.value;
+        }
+      }
+      dbSetTask(t);
+      render();
+      return '✅ 태스크 업데이트 완료: [' + t.cat + '] ' + t.name;
+    }
+
+    if(action.action === 'update_schedule'){
+      var data = getScheduleData();
+      var s = data.find(function(s){ return s.id === action.id; });
+      if(!s) return '❌ 일정 ID ' + action.id + '를 찾을 수 없어요.';
+      if(action.field === 'members' && typeof action.value === 'string'){
+        s[action.field] = [action.value];
+      } else {
+        s[action.field] = action.value;
+      }
+      dbSetScheduleItem(s);
+      if(SCHEDULE_DATA){
+        SCHEDULE_DATA = SCHEDULE_DATA.map(function(item){
+          return item.id === action.id ? s : item;
+        });
+      }
+      render();
+      return '✅ 일정 업데이트 완료: ' + s.item;
+    }
+  } catch(e) {
+    return '❌ 업데이트 오류: ' + e.message;
+  }
+  return null;
+}
+
 function cancelEditDue(){setTimeout(()=>{editingDueId=null;render();},200)}
 function handleNameKey(e,id){if(e.key==='Enter')e.target.blur();if(e.key==='Escape'){editingNameId=null;render();}}
 function startNameEdit(id,e){e.stopPropagation();editingNameId=id;render();setTimeout(function(){var i=document.getElementById('tni'+id);if(i){i.focus();i.select();}},50);}
